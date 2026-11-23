@@ -15,7 +15,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <!-- Versions vérifiées sur nuget.org le 17/11/2026. Le restore n'a PAS pu être exécuté dans l'environnement
+    <!-- Versions vérifiées sur nuget.org le 23/11/2026. Le restore n'a PAS pu être exécuté dans l'environnement
          de développement de ce jalon (pas d'accès à NuGet) : à la première ouverture, si NuGet signale une
          version plus récente ou incompatible, mettre à jour ces trois lignes. -->
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="18.8.1" />
