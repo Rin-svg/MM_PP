@@ -1,0 +1,29 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <!-- xUnit v3 : un projet de tests est un exécutable (OutputType Exe). -->
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net10.0</TargetFramework>
+    <RootNamespace>SlideStudio.Core.Tests</RootNamespace>
+    <IsPackable>false</IsPackable>
+    <IsTestProject>true</IsTestProject>
+
+    <!-- POURQUOI les avertissements ne bloquent pas ICI : les analyseurs de xUnit évoluent à chaque version et
+         proposent des tournures (« Assert.Single », « Assert.Empty »…) qui n'ont rien à voir avec la qualité du code testé.
+         Les règles de SÉCURITÉ restent des erreurs partout (voir .editorconfig). Le code de production, lui,
+         reste en « avertissements = erreurs ». -->
+    <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- Versions vérifiées sur nuget.org le 17/11/2026. Le restore n'a PAS pu être exécuté dans l'environnement
+         de développement de ce jalon (pas d'accès à NuGet) : à la première ouverture, si NuGet signale une
+         version plus récente ou incompatible, mettre à jour ces trois lignes. -->
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="18.8.1" />
+    <PackageReference Include="xunit.v3" Version="3.2.2" />
+    <PackageReference Include="xunit.runner.visualstudio" Version="3.0.2" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\SlideStudio.Core\SlideStudio.Core.csproj" />
+  </ItemGroup>
+</Project>
