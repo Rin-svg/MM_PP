@@ -1,0 +1,9 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <!-- POURQUOI net10.0 (et non net10.0-windows) : le Core ne connaît aucune interface graphique,
+         donc il se compile et se teste sur n'importe quel système (Windows, Linux, intégration continue). -->
+    <TargetFramework>net10.0</TargetFramework>
+    <RootNamespace>SlideStudio.Core</RootNamespace>
+    <!-- Nullabilité, avertissements bloquants et analyseurs : hérités de Directory.Build.props -->
+  </PropertyGroup>
+</Project>
