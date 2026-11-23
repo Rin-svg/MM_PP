@@ -1,0 +1,16 @@
+# Fins de ligne : git normalise en LF dans le dépôt et adapte à la machine de chacun
+# (évite les « fichier entièrement modifié » quand on alterne entre Windows et Linux).
+* text=auto
+
+*.cs      text diff=csharp
+*.csproj  text
+*.props   text
+*.md      text diff=markdown
+*.json    text
+# Les solutions Visual Studio attendent des fins de ligne Windows.
+*.sln     text eol=crlf
+
+# Fichiers binaires : jamais de conversion, pas de diff texte.
+*.zip     binary
+*.png     binary
+*.jpg     binary

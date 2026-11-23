@@ -1,0 +1,11 @@
+bin/
+obj/
+.vs/
+*.user
+*.suo
+TestResults/
+_sandbox/
+
+# Dossiers d'éditeurs (préférences personnelles, à ne pas partager)
+.idea/
+.vscode/
