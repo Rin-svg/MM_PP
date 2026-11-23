@@ -1,41 +1,126 @@
 # SlideStudio — application de présentation en C# (WinForms)
 
-Projet de cours : une application de présentation « type PowerPoint », écrite en C# avec une interface WinForms.
+Projet de cours réalisé en **équipe de 5** : une application de présentation « type PowerPoint », écrite en C# avec une interface WinForms.
 
-**État : jalon M1 terminé** — le « cerveau » de l'application (modèle de document, validation, annuler/rétablir)
-est écrit et testé. L'interface graphique arrive aux jalons M4 et suivants.
+**État actuel : jalon M1 terminé.** Le « cerveau » de l'application (modèle de document, validation, annuler/rétablir) est écrit et testé (215 tests). Il reste à écrire l'enregistrement des fichiers, la logique des écrans et l'interface graphique : c'est ce que l'équipe se partage ci-dessous.
 
-## Prérequis
-- Le SDK **.NET 10** et un IDE compatible (Visual Studio 2026, Rider récent ou VS Code).
-- L'interface WinForms (jalon M4) ne fonctionnera que sous **Windows**. Le `Core` et ses tests tournent partout.
+## Démarrage rapide
 
-## Commandes
+Prérequis : le SDK **.NET 10** et un IDE compatible (Visual Studio 2026, Rider récent ou VS Code). L'interface WinForms ne fonctionnera que sous **Windows**. Le `Core` et ses tests tournent partout.
+
+```powershell
+git clone https://github.com/Rin-svg/MM_PP.git
+cd MM_PP
+dotnet build src/SlideStudio.Core          # compile en mode strict (avertissements = erreurs)
+dotnet test  tests/SlideStudio.Core.Tests  # lance les 215 tests
 ```
-dotnet build src/SlideStudio.Core          # compile le Core en mode strict (avertissements = erreurs)
-dotnet test  tests/SlideStudio.Core.Tests  # lance les 215 tests (nécessite l'accès à NuGet pour xUnit)
-```
 
-## Architecture (dépendances dans un seul sens : UI → Presenters → Core ← Infrastructure)
-| Projet | Cible | Rôle | État |
-|---|---|---|---|
-| `SlideStudio.Core` | net10.0 | Modèle (`Presentation`, `Slide`, éléments), validation, commandes, historique annuler/rétablir. Aucune dépendance UI ni NuGet. | **M1 ✔** |
-| `SlideStudio.Infrastructure` | net10.0 | Format de fichier `.slds`, écriture atomique, copie de secours, lecture d'images. | M2 |
-| `SlideStudio.Presenters` | net10.0 | Logique de chaque écran (patron MVP), testable sans fenêtre. | M3 |
-| `SlideStudio.UI` | net10.0-windows | Formulaires WinForms « bêtes » : affichage et événements seulement. | M4–M7 |
+Avant votre premier commit : configurez votre identité git (voir [CONTRIBUTING.md](CONTRIBUTING.md), section 1), sinon vos commits ne seront pas associés à votre profil GitHub.
+
+## Architecture
+
+Les dépendances vont dans un seul sens : **UI → Presenters → Core ← Infrastructure**. Le `Core` ne dépend de rien ; seul le point d'entrée de l'UI (`Program.cs`) connaît toutes les couches pour les assembler.
+
+| Projet | Cible | Rôle | Jalon | Responsable |
+|---|---|---|---|---|
+| `SlideStudio.Core` | net10.0 | Modèle (`Presentation`, `Slide`, éléments), validation, commandes, historique annuler/rétablir. Aucune dépendance. | **M1 ✔** | Tout le groupe : toute modification passe par une PR relue par **2 personnes** |
+| `SlideStudio.Infrastructure` | net10.0 | Format de fichier `.slds`, écriture sûre, copie de secours, lecture d'images. | M2 | Membre 1 |
+| `SlideStudio.Presenters` | net10.0 | Logique de chaque écran (patron MVP), testable sans fenêtre. | M3 | Membre 2 |
+| `SlideStudio.UI` | net10.0-windows | Formulaires WinForms « bêtes » : affichage et événements seulement. | M4, M5 | Membres 3 et 4 |
+| Diaporama, export, design, qualité | UI + documentation | Mode présentation, export, thèmes, tests d'intégration, CI. | M6, M7 | Membre 5 |
+
+## L'équipe et la répartition des tâches
+
+> **À faire en premier :** chaque personne écrit son pseudo GitHub dans la colonne « Responsable » (dans une petite PR `docs/equipe`). Les rôles ci-dessous sont une proposition : ajustez-les selon les envies et le niveau de chacun, mais gardez **un seul responsable par zone du code**, c'est ce qui évite les conflits.
+
+| # | Rôle | Responsable (pseudo GitHub) | Zone du code | Jalon |
+|---|---|---|---|---|
+| 1 | Persistance et sécurité des fichiers | *à compléter* | `src/SlideStudio.Infrastructure` | M2 |
+| 2 | Logique applicative (Presenters) | *à compléter* | `src/SlideStudio.Presenters` | M3 |
+| 3 | Fenêtre principale et panneaux | *à compléter* | `src/SlideStudio.UI` (hors `Canvas/`) | M4 |
+| 4 | Zone de dessin et édition | *à compléter* | `src/SlideStudio.UI/Canvas` | M5 |
+| 5 | Diaporama, export, design et qualité | *à compléter* | `src/SlideStudio.UI/Slideshow`, `docs/`, CI | M6, M7 |
+
+Chaque tâche ci-dessous devient une **Issue GitHub** (une par ligne de liste), assignée à son responsable et suivie dans un tableau « À faire / En cours / En revue / Terminé ».
+
+### Membre 1 — Persistance et sécurité des fichiers (jalon M2)
+- Ajouter au `Core` `MediaStore` (images embarquées) et `DocumentPackage` (présentation + images).
+- Définir le format de fichier `.slds` (archive zip : `presentation.json` et dossier `media/`).
+- Lire et écrire un fichier `.slds` ; écriture « atomique » (jamais de fichier à moitié écrit) ; messages d'erreur clairs (fichier verrouillé, disque plein…).
+- Vérifier les images **avant** de les décoder (taille, dimensions) ; copie de secours automatique.
+- Se protéger des fichiers piégés (zip malveillant, JSON trop profond, image géante) et le **prouver par des tests**.
+- *Livrable :* une implémentation de `IDocumentStorage` + tests (aller-retour, fichiers hostiles). *Fournit à :* membre 2 (ouvrir/enregistrer), membre 4 (images).
+
+### Membre 2 — Logique applicative, les Presenters (jalon M3)
+- Définir les interfaces des vues et des services (`IMainView`, `IDialogService`, `IDocumentStorage`…) : c'est la **première tâche de l'équipe**, voir « Contrats communs » plus bas.
+- `MainPresenter` : nouveau, ouvrir, enregistrer, enregistrer sous, fermeture avec confirmation s'il y a des modifications non enregistrées, annuler/rétablir, état des boutons (actifs/grisés).
+- Presenter de sélection : éléments sélectionnés, copier/couper/coller, supprimer, ordre de superposition, mise en forme.
+- Protéger contre les doubles clics et les actions pendant un enregistrement.
+- Tester avec de « fausses vues » (aucune fenêtre nécessaire).
+- *Livrable :* Presenters + tests. *Fournit à :* membres 3 et 4.
+
+### Membre 3 — Fenêtre principale et panneaux (jalon M4)
+- Créer le projet WinForms (`net10.0-windows`) et `Program.cs` : gestion de l'échelle d'affichage (DPI), filets pour les erreurs non gérées, assemblage des couches.
+- Fenêtre principale : menus, barre d'outils (ou ruban simplifié), raccourcis (Ctrl+N/O/S/Z/Y…), barre d'état, astérisque « modifié » dans le titre.
+- Panneau de miniatures (liste fluide même avec 500 diapositives, glisser-déposer pour réordonner, menu contextuel).
+- Panneau de propriétés (police, taille, couleurs) et boîtes de dialogue (`WinFormsDialogService`).
+- *Livrable :* fenêtre complète branchée aux Presenters. *Dépend de :* interfaces du membre 2, `SlideRenderer` du membre 4 (miniatures).
+
+### Membre 4 — Zone de dessin et édition (jalon M5)
+- `SlideRenderer` : dessine une diapositive (texte, formes, images) à n'importe quelle échelle. **À livrer très tôt**, car miniatures, diaporama et export le réutilisent.
+- `SlideCanvas` : affichage, zoom, sélection à la souris, poignées de redimensionnement et de rotation, déplacement. Un glisser de souris = **une seule** étape d'annulation (`gestureId`, déjà prévu dans le `Core`).
+- Édition du texte directement sur la diapositive ; insertion d'images ; outils de création des formes.
+- Affichage fluide (double buffering), sans scintillement.
+- *Livrable :* contrôle `SlideCanvas`. C'est la partie **la plus longue** : les autres membres peuvent l'aider une fois leur zone terminée.
+
+### Membre 5 — Diaporama, design et qualité (jalons M6 et M7, et transversal)
+- Mode diaporama plein écran (F5, flèches, Échap, écran noir).
+- Export des diapositives en images PNG ; export PDF (piste à étudier ensemble).
+- Design : palette, thèmes de diapositives, icônes, cohérence visuelle, contraste du texte (≥ 4,5:1) ; accessibilité (utilisable au clavier seul).
+- Qualité : dérouler une liste de scénarios à risque (double-clic sur Enregistrer, fichier verrouillé, fermeture sans enregistrer…) avant chaque grande fusion ; mettre en place la CI (compilation + tests à chaque PR) ; tenir à jour ce README et les schémas d'architecture ; préparer la démonstration finale.
+- *Dépend de :* `SlideRenderer` du membre 4.
+
+## Ordre de travail
+
+1. **Étape 0 — Mise en place (tous).** Cloner, configurer son identité git, compiler, lancer les tests. Le propriétaire du dépôt ajoute les collaborateurs et protège `main` (voir CONTRIBUTING.md, section 9).
+2. **Étape 1 — Contrats communs (petites PR, relues par tous).** Avant de coder en parallèle, on se met d'accord sur les « prises » entre les parties :
+
+   | Contrat | Où | Écrit par | Utilisé par |
+   |---|---|---|---|
+   | `MediaStore`, `DocumentPackage` | Core | Membre 1 | 2, 3, 4 |
+   | `IDocumentStorage` (ouvrir / enregistrer) | Core | Membre 2 définit, membre 1 implémente | 2 |
+   | `IDialogService`, interfaces de vues (`IMainView`…) | Presenters | Membre 2 | 3, 4 |
+   | `SlideRenderer` (dessiner une diapositive à une échelle) | UI | Membre 4 | 3 (miniatures), 5 (diaporama, export) |
+
+3. **Étape 2 — Développement en parallèle.** Chacun travaille dans sa zone, sur ses branches (voir ci-dessous).
+4. **Étape 3 — Intégration.** Le membre 3 assemble les couches ; le membre 5 déroule les scénarios de test ; tout le monde corrige son périmètre.
+5. **Étape 4 — Finitions et rendu (M7).** Thèmes, accessibilité, échelle d'affichage, documentation, démonstration.
+
+## Travailler avec git (résumé)
+
+On applique le principe le plus simple : **`main` ne contient que du code qui compile et que les tests valident ; tout le travail se fait sur des branches courtes, fusionnées par Pull Request.**
+
+1. `git switch main` puis `git pull` : on part du code à jour.
+2. `git switch -c feat/persistance-lecture-slds` : **une branche par tâche** (nommage : `type/zone-sujet`).
+3. On travaille, on commit souvent : `git commit -m "feat(infra): lecture d'un fichier .slds"`.
+4. `dotnet build` (0 avertissement) puis `dotnet test` : **avant** de pousser.
+5. `git push -u origin feat/persistance-lecture-slds`, puis on ouvre une **Pull Request** sur GitHub.
+6. Un autre membre **relit** et approuve (jamais le même que l'auteur).
+7. L'auteur fusionne avec **« Squash and merge »** et supprime la branche.
+8. Tout le monde fait `git switch main` puis `git pull`.
+
+Jamais de push direct sur `main`, jamais de `git push --force` sur une branche partagée. Le guide complet (commandes pas à pas, conflits, problèmes fréquents, règles de relecture) est dans **[CONTRIBUTING.md](CONTRIBUTING.md)**.
 
 ## Où lire le code en premier
-1. `Core/Limits.cs` — toutes les limites (taille de texte, nombre de diapositives…) et pourquoi elles existent.
-2. `Core/DocumentRules.cs` — la validation en liste blanche (c'est la barrière de sécurité du modèle).
-3. `Core/Editing/UndoHistory.cs` — l'historique annuler/rétablir et le suivi des modifications non enregistrées.
-4. `tests/` — chaque règle est documentée par un test ; les noms de tests se lisent comme des phrases.
+1. `src/SlideStudio.Core/Limits.cs` : toutes les limites (taille de texte, nombre de diapositives…) et pourquoi elles existent.
+2. `src/SlideStudio.Core/DocumentRules.cs` : la validation en liste blanche, c'est la barrière de sécurité du modèle.
+3. `src/SlideStudio.Core/Editing/UndoHistory.cs` : l'historique annuler/rétablir et le suivi des modifications non enregistrées.
+4. `tests/` : chaque règle est documentée par un test ; les noms de tests se lisent comme des phrases.
 
-## Conventions
-- Commentaires en français qui expliquent le **pourquoi** ; balises `POURQUOI`, `SÉCURITÉ`, `ROBUSTESSE`, `UTILISATEUR`, `LIMITE`, `ATTENTION`.
+## Conventions de code
+- Commentaires en français qui expliquent le **pourquoi**, pas le quoi. Balises : `POURQUOI`, `SÉCURITÉ`, `ROBUSTESSE`, `UTILISATEUR`, `LIMITE`, `ATTENTION`.
 - Toute modification du document passe par une **commande** (`EditCommands`, `UndoHistory.Execute`) pour rester annulable.
 - Une valeur refusée par la validation ne modifie jamais le document.
-
-## Workflow Git
-- Branche principale : `main`. Une branche courte par fonctionnalité (par exemple `feat/enregistrement`), fusionnée quand la compilation et les tests passent.
-- Messages de commit : `type(portée): résumé` en français, avec `type` parmi `feat`, `fix`, `test`, `docs`, `refactor`, `chore`.
-- Avant chaque commit : `dotnet build` (0 avertissement) puis `dotnet test`.
-- Un commit = une idée complète **et qui compile**.
+- Toute entrée venant de l'extérieur (fichier, saisie, presse-papiers) est validée en **liste blanche**.
+- Pas de `// TODO` dans le code fusionné : une tâche à faire est une Issue.
+- Les avertissements du compilateur sont des erreurs : on corrige, on ne désactive pas une règle sans en parler au groupe.
