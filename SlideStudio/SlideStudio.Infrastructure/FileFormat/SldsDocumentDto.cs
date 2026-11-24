@@ -66,3 +66,15 @@ public class ElementDto
 public class BackgroundDto
 {
 }
+
+public sealed class BackgroundDto
+{
+    [JsonPropertyName("type")]
+    public string Type { get; set; } = "Solid";
+
+    [JsonPropertyName("color")]
+    public string? Color { get; set; }
+
+    [JsonPropertyName("imageId")]
+    public string? ImageId { get; set; }
+}
