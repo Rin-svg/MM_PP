@@ -9,9 +9,9 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\SlideStudio.core\SlideStudio.core.csproj" />
     <ProjectReference Include="..\SlideStudio.Infrastructure\SlideStudio.Infrastructure.csproj" />
-    <ProjectReference Include="..\SlideStudio.Presenters\SlideStudio.Presenters.csproj" />
+    <ProjectReference Include="..\..\src\SlideStudio.Core\SlideStudio.Core.csproj" />
+    <ProjectReference Include="..\..\src\SlideStudio.Presenters\SlideStudio.Presenters.csproj" />
   </ItemGroup>
 
 </Project>
