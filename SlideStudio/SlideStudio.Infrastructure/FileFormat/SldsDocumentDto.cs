@@ -116,3 +116,7 @@ public sealed class ElementDto
     [JsonPropertyName("imageId")]
     public string? ImageId { get; set; }
 }
+
+public class TextStyleDto
+{
+}
