@@ -2,7 +2,7 @@
 
 Projet de cours réalisé en **équipe de 5** : une application de présentation « type PowerPoint », écrite en C# avec une interface WinForms.
 
-**État actuel : jalons M1 et M3 terminés.** Le modèle de document, la validation, l'annuler/rétablir (215 tests) et les présentateurs testables sans interface (12 tests) sont en place. Il reste à écrire l'enregistrement des fichiers et l'interface graphique : c'est ce que l'équipe se partage ci-dessous.
+**État actuel : M1 terminé; M3 implémenté sur `feat/presenters-m3` (12 tests).** Le modèle, la validation et l'historique du Core sont couverts par 215 tests. Les présentateurs et leurs contrats sont implémentés et testés sans fenêtre. La PR M3 reste à relire et à fusionner avant de considérer ce jalon intégré à `main`. Le stockage `.slds` (M2) et l'interface (M4+) restent à réaliser.
 
 ## Démarrage rapide
 
@@ -25,7 +25,7 @@ Les dépendances vont dans un seul sens : **UI → Presenters → Core ← Infra
 |---|---|---|---|---|
 | `SlideStudio.Core` | net10.0 | Modèle (`Presentation`, `Slide`, éléments), validation, commandes, historique annuler/rétablir. Aucune dépendance. | **M1 ✔** | Tout le groupe : toute modification passe par une PR relue par **2 personnes** |
 | `SlideStudio.Infrastructure` | net10.0 | Format de fichier `.slds`, écriture sûre, copie de secours, lecture d'images. | M2 | Membre 1 |
-| `SlideStudio.Presenters` | net10.0 | Logique de chaque écran (patron MVP), testable sans fenêtre. | M3 | Membre 2 |
+| `SlideStudio.Presenters` | net10.0 | Logique de chaque écran (patron MVP), testable sans fenêtre. | M3 (implémenté, PR à intégrer) | Membre 2 |
 | `SlideStudio.UI` | net10.0-windows | Formulaires WinForms « bêtes » : affichage et événements seulement. | M4, M5 | Membres 3 et 4 |
 | Diaporama, export, design, qualité | UI + documentation | Mode présentation, export, thèmes, tests d'intégration, CI. | M6, M7 | Membre 5 |
 
@@ -53,10 +53,10 @@ Chaque tâche ci-dessous devient une **Issue GitHub** (une par ligne de liste), 
 
 ### Membre 2 — Logique applicative, les Presenters (jalon M3)
 - Définir les interfaces des vues et des services (`IMainView`, `IDialogService`, `IDocumentStorage`…) : c'est la **première tâche de l'équipe**, voir « Contrats communs » plus bas.
-- `MainPresenter` : nouveau, ouvrir, enregistrer, enregistrer sous, fermeture avec confirmation s'il y a des modifications non enregistrées, annuler/rétablir, état des boutons (actifs/grisés).
-- Presenter de sélection : éléments sélectionnés, copier/couper/coller, supprimer, ordre de superposition, mise en forme.
-- Protéger contre les doubles clics et les actions pendant un enregistrement.
-- Tester avec de « fausses vues » (aucune fenêtre nécessaire).
+- `MainPresenter` : nouveau, ouvrir, enregistrer, enregistrer sous, fermeture avec confirmation s'il y a des modifications non enregistrées, annuler/rétablir, état des boutons (actifs/grisés), ajout, déplacement et duplication de diapositives.
+- `SelectionPresenter` : sélection, copier/couper/coller, dupliquer, supprimer, ordre de superposition et mise en forme du texte et des formes.
+- Protéger contre les doubles clics et les actions pendant une opération de fichier.
+- Tester avec de « fausses vues » (aucune fenêtre nécessaire) : 12 tests M3.
 - *Livrable :* Presenters + tests. *Fournit à :* membres 3 et 4.
 
 ### Membre 3 — Fenêtre principale et panneaux (jalon M4)
@@ -92,9 +92,11 @@ Chaque tâche ci-dessous devient une **Issue GitHub** (une par ligne de liste), 
    | `IDialogService`, interfaces de vues (`IMainView`…) | Presenters | Membre 2 | 3, 4 |
    | `SlideRenderer` (dessiner une diapositive à une échelle) | UI | Membre 4 | 3 (miniatures), 5 (diaporama, export) |
 
-3. **Étape 2 — Développement en parallèle.** Chacun travaille dans sa zone, sur ses branches (voir ci-dessous).
-4. **Étape 3 — Intégration.** Le membre 3 assemble les couches ; le membre 5 déroule les scénarios de test ; tout le monde corrige son périmètre.
-5. **Étape 4 — Finitions et rendu (M7).** Thèmes, accessibilité, échelle d'affichage, documentation, démonstration.
+3. **Prochaine priorité — intégrer M3 et réaliser M2.** Relire et fusionner la PR `feat/presenters-m3`, puis implémenter `IDocumentStorage` dans Infrastructure : les présentateurs ont le contrat, mais l'ouverture et l'enregistrement ne fonctionneront réellement qu'une fois le stockage fourni.
+4. **Démarrer tôt `SlideRenderer` (M5).** Le livrer dès que possible : le panneau de miniatures de M4 et le diaporama/export en dépendent.
+5. **Étape 2 — Développement en parallèle.** La fenêtre principale M4 peut avancer en parallèle sur les menus, raccourcis et panneaux; brancher l'ouverture/enregistrement après M2, et les miniatures après le renderer.
+6. **Étape 3 — Intégration.** Le membre 3 assemble les couches ; le membre 5 déroule les scénarios de test ; tout le monde corrige son périmètre.
+7. **Étape 4 — Finitions et rendu (M7).** Thèmes, accessibilité, échelle d'affichage, documentation, démonstration.
 
 ## Travailler avec git (résumé)
 
