@@ -1,0 +1,6 @@
+<Solution>
+  <Project Path="SlideStudio.core/SlideStudio.core.csproj" />
+  <Project Path="SlideStudio.Infrastructure/SlideStudio.Infrastructure.csproj" />
+  <Project Path="SlideStudio.Presenters/SlideStudio.Presenters.csproj" />
+  <Project Path="SlideStudio.UI/SlideStudio.UI.csproj" />
+</Solution>
