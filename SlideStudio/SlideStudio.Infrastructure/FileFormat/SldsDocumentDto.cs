@@ -141,3 +141,15 @@ public sealed class TextStyleDto2
     [JsonPropertyName("alignment")]
     public string Alignment { get; set; } = "Left";
 }
+
+public sealed class MediaItemDto1
+{
+    [JsonPropertyName("fileName")]
+    public string FileName { get; set; } = string.Empty;
+
+    [JsonPropertyName("mimeType")]
+    public string MimeType { get; set; } = "image/png";
+
+    [JsonPropertyName("data")]
+    public string Data { get; set; } = string.Empty; // Base64
+}
