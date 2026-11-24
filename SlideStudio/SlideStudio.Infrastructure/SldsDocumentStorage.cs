@@ -37,6 +37,11 @@ public sealed class SldsDocumentStorage : IDocumentStorage
                 throw new InvalidDataException("Le fichier contient trop d'entrées.");
             }
 
+            if (archive.Entries.Count(entry => entry.FullName == PresentationEntryName) != 1)
+            {
+                throw new InvalidDataException("Le fichier doit contenir exactement une entrée presentation.json.");
+            }
+
             ZipArchiveEntry? entry = archive.GetEntry(PresentationEntryName);
             if (entry is null)
             {
@@ -62,6 +67,10 @@ public sealed class SldsDocumentStorage : IDocumentStorage
             }
 
             return ConvertToPresentation(document.Presentation);
+        }
+        catch (JsonException exception)
+        {
+            throw new InvalidDataException("Le JSON presentation.json est invalide.", exception);
         }
         catch (IOException exception)
         {
