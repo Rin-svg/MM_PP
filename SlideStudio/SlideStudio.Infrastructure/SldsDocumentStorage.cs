@@ -24,15 +24,23 @@ public sealed class SldsDocumentStorage : IDocumentStorage
         WriteIndented = true
     };
 
+    /// <summary>Ouvre un fichier et renvoie la présentation, sans exposer son magasin média.</summary>
+    public Presentation Open(string fileName) => OpenPackage(fileName).Presentation;
+
     /// <inheritdoc />
-    public Presentation Open(string fileName)
+    public DocumentPackage OpenPackage(string fileName)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(fileName);
 
         try
         {
+            if (new FileInfo(fileName).Length > Limits.MaxDocumentBytes)
+            {
+                throw new InvalidDataException("Le fichier .slds dépasse la taille maximale autorisée.");
+            }
+
             using ZipArchive archive = ZipFile.OpenRead(fileName);
-            if (archive.Entries.Count > Limits.MaxSlides + Limits.MaxElementsPerSlide)
+            if (archive.Entries.Count > Limits.MaxMediaCount + 1)
             {
                 throw new InvalidDataException("Le fichier contient trop d'entrées.");
             }
@@ -53,9 +61,19 @@ public sealed class SldsDocumentStorage : IDocumentStorage
                 throw new InvalidDataException("Les données de présentation sont trop volumineuses.");
             }
 
-            using Stream stream = entry.Open();
-            using StreamReader reader = new(stream, Encoding.UTF8, detectEncodingFromByteOrderMarks: true);
-            string json = reader.ReadToEnd();
+            byte[] jsonBytes;
+            using (Stream stream = entry.Open())
+            {
+                jsonBytes = ReadBounded(stream, 5_000_000);
+            }
+
+            string json = new UTF8Encoding(encoderShouldEmitUTF8Identifier: false, throwOnInvalidBytes: true)
+                .GetString(jsonBytes);
+            if (json.Length > 0 && json[0] == '\uFEFF')
+            {
+                json = json[1..];
+            }
+
             SldsDocumentDto? document = JsonSerializer.Deserialize<SldsDocumentDto>(json, ReadOptions)
                 ?? throw new InvalidDataException("Le fichier ne contient pas de document valide.");
 
@@ -66,7 +84,48 @@ public sealed class SldsDocumentStorage : IDocumentStorage
                 throw new InvalidDataException("Format ou application .slds non pris en charge.");
             }
 
-            return ConvertToPresentation(document.Presentation);
+            Presentation presentation = ConvertToPresentation(document.Presentation);
+            MediaStore media = new();
+            HashSet<string> mediaNames = new(StringComparer.Ordinal);
+            long totalMediaBytes = 0;
+            foreach (ZipArchiveEntry mediaEntry in archive.Entries)
+            {
+                if (mediaEntry.FullName == PresentationEntryName)
+                {
+                    continue;
+                }
+
+                if (!mediaEntry.FullName.StartsWith("media/", StringComparison.Ordinal))
+                {
+                    throw new InvalidDataException("Le fichier contient une entrée non autorisée.");
+                }
+
+                string mediaName = mediaEntry.FullName["media/".Length..];
+                if (mediaName.Length == 0
+                    || mediaName.Contains('/')
+                    || mediaName.Contains('\\')
+                    || !mediaNames.Add(mediaName))
+                {
+                    throw new InvalidDataException("Le chemin d'un média est invalide ou dupliqué.");
+                }
+
+                if (mediaEntry.Length is 0 or > Limits.MaxMediaBytes)
+                {
+                    throw new InvalidDataException("La taille d'un média est invalide.");
+                }
+
+                totalMediaBytes += mediaEntry.Length;
+                if (totalMediaBytes > Limits.MaxTotalMediaBytes)
+                {
+                    throw new InvalidDataException("La taille cumulée des médias est trop importante.");
+                }
+
+                using Stream mediaStream = mediaEntry.Open();
+                byte[] mediaBytes = ReadBounded(mediaStream, Limits.MaxMediaBytes);
+                media.Add(mediaName, mediaBytes);
+            }
+
+            return new DocumentPackage(presentation, media);
         }
         catch (JsonException exception)
         {
@@ -82,27 +141,47 @@ public sealed class SldsDocumentStorage : IDocumentStorage
         }
     }
 
+    /// <summary>Enregistre une présentation qui ne référence aucun média.</summary>
+    public void Save(Presentation presentation, string fileName) =>
+        SavePackage(new DocumentPackage(presentation), fileName);
+
     /// <inheritdoc />
-    public void Save(Presentation presentation, string fileName)
+    public void SavePackage(DocumentPackage package, string fileName)
     {
-        ArgumentNullException.ThrowIfNull(presentation);
+        ArgumentNullException.ThrowIfNull(package);
         ArgumentException.ThrowIfNullOrWhiteSpace(fileName);
+        package.Validate();
 
         string fullPath = Path.GetFullPath(fileName);
         string directory = Path.GetDirectoryName(fullPath)
             ?? throw new IOException("Le dossier de destination est invalide.");
 
-        Directory.CreateDirectory(directory);
-        string temporaryPath = Path.Combine(directory, "." + Guid.NewGuid().ToString("N") + ".tmp");
+        string? temporaryPath = null;
 
         try
         {
-            SldsDocumentDto document = ConvertToDto(presentation);
+            Directory.CreateDirectory(directory);
+            temporaryPath = Path.Combine(directory, "." + Guid.NewGuid().ToString("N") + ".tmp");
+
+            SldsDocumentDto document = ConvertToDto(package.Presentation);
             using (ZipArchive archive = ZipFile.Open(temporaryPath, ZipArchiveMode.Create))
             {
                 ZipArchiveEntry entry = archive.CreateEntry(PresentationEntryName, CompressionLevel.SmallestSize);
-                using Stream stream = entry.Open();
-                JsonSerializer.Serialize(stream, document, WriteOptions);
+                using (Stream entryStream = entry.Open())
+                using (BoundedWriteStream stream = new(entryStream, 5_000_000))
+                {
+                    JsonSerializer.Serialize(stream, document, WriteOptions);
+                }
+
+                foreach (string mediaName in package.Media.Names)
+                {
+                    ZipArchiveEntry mediaEntry = archive.CreateEntry(
+                        "media/" + mediaName,
+                        CompressionLevel.SmallestSize);
+                    using Stream mediaStream = mediaEntry.Open();
+                    byte[] mediaBytes = package.Media.GetBytes(mediaName);
+                    mediaStream.Write(mediaBytes);
+                }
             }
 
             if (File.Exists(fullPath))
@@ -114,17 +193,106 @@ public sealed class SldsDocumentStorage : IDocumentStorage
         }
         catch (IOException exception)
         {
-            throw new IOException("Impossible d'enregistrer le fichier .slds.", exception);
+            throw new IOException(
+                "Impossible d'enregistrer le fichier .slds. Vérifiez qu'il n'est pas verrouillé et que l'espace disque est suffisant.",
+                exception);
         }
         catch (UnauthorizedAccessException exception)
         {
-            throw new IOException("Le fichier .slds est verrouillé ou inaccessible.", exception);
+            throw new IOException(
+                "Le fichier .slds est verrouillé ou inaccessible. Vérifiez les droits d'accès.",
+                exception);
         }
         finally
         {
-            if (File.Exists(temporaryPath))
+            if (temporaryPath is not null && File.Exists(temporaryPath))
             {
                 File.Delete(temporaryPath);
+            }
+        }
+    }
+
+    private static byte[] ReadBounded(Stream stream, int maximumBytes)
+    {
+        using MemoryStream buffer = new();
+        byte[] chunk = new byte[81920];
+        int read;
+        while ((read = stream.Read(chunk, 0, chunk.Length)) > 0)
+        {
+            if (buffer.Length + read > maximumBytes)
+            {
+                throw new InvalidDataException("Le contenu décompressé dépasse la taille maximale autorisée.");
+            }
+
+            buffer.Write(chunk, 0, read);
+        }
+
+        return buffer.ToArray();
+    }
+
+    private sealed class BoundedWriteStream(Stream inner, int maximumBytes) : Stream
+    {
+        private int _written;
+
+        public override bool CanRead => false;
+        public override bool CanSeek => false;
+        public override bool CanWrite => true;
+        public override long Length => _written;
+
+        public override long Position
+        {
+            get => _written;
+            set => throw new NotSupportedException();
+        }
+
+        public override void Flush() => inner.Flush();
+
+        public override int Read(byte[] buffer, int offset, int count) =>
+            throw new NotSupportedException();
+
+        public override long Seek(long offset, SeekOrigin origin) =>
+            throw new NotSupportedException();
+
+        public override void SetLength(long value) =>
+            throw new NotSupportedException();
+
+        public override void Write(byte[] buffer, int offset, int count)
+        {
+            ArgumentNullException.ThrowIfNull(buffer);
+            ArgumentOutOfRangeException.ThrowIfNegative(offset);
+            ArgumentOutOfRangeException.ThrowIfNegative(count);
+            if (offset > buffer.Length - count)
+            {
+                throw new ArgumentException("La plage d'écriture dépasse le tampon.", nameof(count));
+            }
+
+            EnsureCapacity(count);
+            inner.Write(buffer, offset, count);
+            _written += count;
+        }
+
+        public override void Write(ReadOnlySpan<byte> buffer)
+        {
+            EnsureCapacity(buffer.Length);
+            inner.Write(buffer);
+            _written += buffer.Length;
+        }
+
+        protected override void Dispose(bool disposing)
+        {
+            if (disposing)
+            {
+                inner.Flush();
+            }
+
+            base.Dispose(disposing);
+        }
+
+        private void EnsureCapacity(int bytesToWrite)
+        {
+            if (_written > maximumBytes - bytesToWrite)
+            {
+                throw new InvalidDataException("Les données de présentation dépassent la taille maximale autorisée.");
             }
         }
     }
@@ -137,7 +305,7 @@ public sealed class SldsDocumentStorage : IDocumentStorage
             throw new InvalidDataException("Les dimensions de la diapositive ne sont pas prises en charge.");
         }
 
-        if (dto.Slides.Count is < 1 or > Limits.MaxSlides)
+        if (dto.Slides is null || dto.Slides.Count is < 1 or > Limits.MaxSlides)
         {
             throw new InvalidDataException("Le nombre de diapositives est invalide.");
         }
@@ -145,6 +313,11 @@ public sealed class SldsDocumentStorage : IDocumentStorage
         List<Slide> slides = new(dto.Slides.Count);
         foreach (SlideDto slideDto in dto.Slides)
         {
+            if (slideDto is null || slideDto.Elements is null)
+            {
+                throw new InvalidDataException("Une diapositive est invalide.");
+            }
+
             if (!Guid.TryParseExact(slideDto.Id, "D", out Guid slideId))
             {
                 throw new InvalidDataException("Identifiant de diapositive invalide.");
@@ -174,6 +347,11 @@ public sealed class SldsDocumentStorage : IDocumentStorage
 
     private static SlideElement ConvertToElement(ElementDto dto)
     {
+        if (dto is null || dto.Frame is null)
+        {
+            throw new InvalidDataException("Un élément est invalide.");
+        }
+
         if (!Guid.TryParseExact(dto.Id, "D", out Guid id))
         {
             throw new InvalidDataException("Identifiant d'élément invalide.");

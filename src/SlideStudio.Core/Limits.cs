@@ -64,6 +64,24 @@ public static class Limits
     /// <summary>Nombre maximal de caractères dans le nom d'une image embarquée.</summary>
     public const int MaxMediaNameLength = 100;
 
+    /// <summary>Taille maximale d'une image embarquée, en octets.</summary>
+    public const int MaxMediaBytes = 20 * 1024 * 1024;
+
+    /// <summary>Taille maximale cumulée des médias d'un document, en octets.</summary>
+    public const long MaxTotalMediaBytes = 100L * 1024 * 1024;
+
+    /// <summary>Nombre maximal d'images embarquées dans un document.</summary>
+    public const int MaxMediaCount = 1_000;
+
+    /// <summary>Taille maximale d'une archive .slds, en octets.</summary>
+    public const long MaxDocumentBytes = 120L * 1024 * 1024;
+
+    /// <summary>Largeur ou hauteur maximale d'une image, en pixels.</summary>
+    public const int MaxImageDimension = 8_192;
+
+    /// <summary>Nombre maximal de pixels d'une image, pour limiter le coût de décodage ultérieur.</summary>
+    public const long MaxImagePixels = 40_000_000;
+
     // LIMITE : 200 actions annulables. Chaque action garde des références en mémoire : on borne l'historique.
     /// <summary>Nombre maximal d'actions conservées dans l'historique annuler/rétablir.</summary>
     public const int MaxHistoryDepth = 200;
