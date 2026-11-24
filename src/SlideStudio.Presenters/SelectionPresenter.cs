@@ -117,6 +117,29 @@ public sealed class SelectionPresenter
         return true;
     }
 
+    /// <summary>Duplique les éléments sélectionnés sur la diapositive courante.</summary>
+    public bool Duplicate()
+    {
+        if (_selection.Count == 0)
+        {
+            return false;
+        }
+
+        SlideElement[] duplicates = _selection.Select(element => element.Clone()).ToArray();
+        foreach (SlideElement duplicate in duplicates)
+        {
+            _history.Execute(new AddElementCommand(_slide, duplicate, "Dupliquer l'élément"));
+        }
+
+        _selection.Clear();
+        foreach (SlideElement duplicate in duplicates)
+        {
+            _selection.Add(duplicate);
+        }
+        Refresh();
+        return true;
+    }
+
     /// <summary>Place l'unique élément sélectionné au premier plan.</summary>
     public bool BringToFront()
     {
@@ -166,6 +189,70 @@ public sealed class SelectionPresenter
         foreach (TextElement element in _selection.OfType<TextElement>())
         {
             _history.Execute(EditCommands.SetItalic(element, isItalic));
+        }
+    }
+
+    /// <summary>Change la police des zones de texte sélectionnées.</summary>
+    public void SetFontFamily(string fontFamily)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(fontFamily);
+        foreach (TextElement element in _selection.OfType<TextElement>())
+        {
+            _history.Execute(EditCommands.SetFontFamily(element, fontFamily));
+        }
+    }
+
+    /// <summary>Change la taille de police des zones de texte sélectionnées.</summary>
+    public void SetFontSize(double points)
+    {
+        foreach (TextElement element in _selection.OfType<TextElement>())
+        {
+            _history.Execute(EditCommands.SetFontSize(element, points));
+        }
+    }
+
+    /// <summary>Change la couleur du texte des zones sélectionnées.</summary>
+    public void SetTextColor(ArgbColor color)
+    {
+        foreach (TextElement element in _selection.OfType<TextElement>())
+        {
+            _history.Execute(EditCommands.SetTextColor(element, color));
+        }
+    }
+
+    /// <summary>Change l'alignement des zones de texte sélectionnées.</summary>
+    public void SetTextAlignment(TextAlignment alignment)
+    {
+        foreach (TextElement element in _selection.OfType<TextElement>())
+        {
+            _history.Execute(EditCommands.SetTextAlignment(element, alignment));
+        }
+    }
+
+    /// <summary>Change le remplissage des formes sélectionnées.</summary>
+    public void SetShapeFill(ArgbColor color)
+    {
+        foreach (ShapeElement element in _selection.OfType<ShapeElement>())
+        {
+            _history.Execute(EditCommands.SetShapeFill(element, color));
+        }
+    }
+
+    /// <summary>Change le contour des formes sélectionnées.</summary>
+    public void SetShapeStroke(ArgbColor color)
+    {
+        foreach (ShapeElement element in _selection.OfType<ShapeElement>())
+        {
+            _history.Execute(EditCommands.SetShapeStroke(element, color));
+        }
+    }
+
+    /// <summary>Change l'épaisseur du contour des formes sélectionnées.</summary>
+    public void SetShapeStrokeWidth(double strokeWidth)
+    {
+        foreach (ShapeElement element in _selection.OfType<ShapeElement>())
+        {
+            _history.Execute(EditCommands.SetShapeStrokeWidth(element, strokeWidth));
         }
     }
 

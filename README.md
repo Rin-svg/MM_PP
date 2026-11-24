@@ -2,7 +2,7 @@
 
 Projet de cours réalisé en **équipe de 5** : une application de présentation « type PowerPoint », écrite en C# avec une interface WinForms.
 
-**État actuel : jalons M1 et M3 terminés.** Le modèle de document, la validation, l'annuler/rétablir (215 tests) et les présentateurs testables sans interface (6 tests) sont en place. Il reste à écrire l'enregistrement des fichiers et l'interface graphique : c'est ce que l'équipe se partage ci-dessous.
+**État actuel : jalons M1 et M3 terminés.** Le modèle de document, la validation, l'annuler/rétablir (215 tests) et les présentateurs testables sans interface (12 tests) sont en place. Il reste à écrire l'enregistrement des fichiers et l'interface graphique : c'est ce que l'équipe se partage ci-dessous.
 
 ## Démarrage rapide
 

@@ -71,7 +71,7 @@ public sealed class MainPresenter
     /// <summary>Demande un fichier puis l'ouvre.</summary>
     public bool Open()
     {
-        if (_isBusy || !PrepareForDocumentSwitch())
+        if (_isBusy)
         {
             return false;
         }
@@ -89,7 +89,7 @@ public sealed class MainPresenter
     public bool Open(string fileName)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(fileName);
-        if (_isBusy)
+        if (_isBusy || !PrepareForDocumentSwitch())
         {
             return false;
         }
@@ -234,6 +234,26 @@ public sealed class MainPresenter
         _history.Execute(new DeleteSlideCommand(_presentation, _selectedSlide));
         _selectedSlide = _presentation.Slides[Math.Min(index, _presentation.Slides.Count - 1)];
         Refresh();
+    }
+
+    /// <summary>Duplique la diapositive active juste après son emplacement actuel.</summary>
+    public bool DuplicateSelectedSlide()
+    {
+        if (_isBusy || _selectedSlide is null)
+        {
+            return false;
+        }
+
+        int index = _presentation.IndexOf(_selectedSlide);
+        Slide duplicate = _selectedSlide.Clone();
+        _history.Execute(new AddSlideCommand(
+            _presentation,
+            duplicate,
+            index + 1,
+            "Dupliquer la diapositive"));
+        _selectedSlide = duplicate;
+        Refresh();
+        return true;
     }
 
     /// <summary>Déplace une diapositive à la position demandée.</summary>

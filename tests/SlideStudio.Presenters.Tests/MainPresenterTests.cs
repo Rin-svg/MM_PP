@@ -68,6 +68,74 @@ public sealed class MainPresenterTests
         Assert.Single(presenter.Presentation.Slides);
     }
 
+    [Fact]
+    public void Duplicate_selected_slide_inserts_an_independent_slide()
+    {
+        FakeView view = new();
+        MainPresenter presenter = new(view, new FakeDialogs(), new FakeStorage());
+        Slide original = presenter.SelectedSlide!;
+
+        Assert.True(presenter.DuplicateSelectedSlide());
+
+        Assert.Equal(2, presenter.Presentation.Slides.Count);
+        Assert.NotSame(original, presenter.SelectedSlide);
+        Assert.Same(presenter.SelectedSlide, presenter.Presentation.Slides[1]);
+        Assert.True(presenter.History.CanUndo);
+    }
+
+    [Fact]
+    public void New_discard_choice_allows_replacing_the_document()
+    {
+        FakeDialogs dialogs = new() { UnsavedChoice = UnsavedChangesChoice.Discard };
+        MainPresenter presenter = new(
+            new FakeView(),
+            dialogs,
+            new FakeStorage());
+        presenter.History.Execute(EditCommands.SetTitle(presenter.Presentation, "Modifié"));
+
+        Assert.True(presenter.New());
+        Assert.Equal(Presentation.DefaultTitle, presenter.Presentation.Title);
+        Assert.False(presenter.History.IsModified);
+        Assert.Equal(1, dialogs.UnsavedConfirmationCount);
+    }
+
+    [Fact]
+    public void New_save_choice_saves_then_replaces_the_document()
+    {
+        FakeDialogs dialogs = new()
+        {
+            UnsavedChoice = UnsavedChangesChoice.Save,
+            SaveFileName = "presentation.slds"
+        };
+        FakeStorage storage = new();
+        MainPresenter presenter = new(
+            new FakeView(),
+            dialogs,
+            storage);
+        presenter.History.Execute(EditCommands.SetTitle(presenter.Presentation, "Modifié"));
+
+        Assert.True(presenter.New());
+        Assert.Equal(1, storage.SaveCount);
+        Assert.Equal(Presentation.DefaultTitle, presenter.Presentation.Title);
+    }
+
+    [Fact]
+    public void Add_and_move_slide_keep_the_presentation_consistent()
+    {
+        MainPresenter presenter = new(
+            new FakeView(),
+            new FakeDialogs(),
+            new FakeStorage());
+
+        presenter.AddSlide();
+        Slide added = presenter.SelectedSlide!;
+        Assert.Equal(2, presenter.Presentation.Slides.Count);
+        Assert.Same(added, presenter.SelectedSlide);
+
+        presenter.MoveSlide(added, 0);
+        Assert.Same(added, presenter.Presentation.Slides[0]);
+    }
+
     private sealed class FakeView : IMainView
     {
         public void SetDocument(Presentation presentation, Slide? selectedSlide) { }

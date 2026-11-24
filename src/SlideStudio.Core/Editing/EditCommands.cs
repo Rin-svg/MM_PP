@@ -52,6 +52,22 @@ public static class EditCommands
         new SetPropertyCommand<TextElement, bool>(
             element, nameof(TextElement.IsItalic), "Italique", e => e.IsItalic, (e, v) => e.IsItalic = v, isItalic);
 
+    /// <summary>Change la police d'une zone de texte.</summary>
+    /// <param name="element">Zone de texte.</param>
+    /// <param name="fontFamily">Nom de police.</param>
+    /// <returns>Commande à passer à <see cref="UndoHistory.Execute"/>.</returns>
+    public static IUndoableCommand SetFontFamily(TextElement element, string fontFamily) =>
+        new SetPropertyCommand<TextElement, string>(
+            element, nameof(TextElement.FontFamily), "Police", e => e.FontFamily, (e, v) => e.FontFamily = v, fontFamily);
+
+    /// <summary>Change l'alignement horizontal d'une zone de texte.</summary>
+    /// <param name="element">Zone de texte.</param>
+    /// <param name="alignment">Alignement demandé.</param>
+    /// <returns>Commande à passer à <see cref="UndoHistory.Execute"/>.</returns>
+    public static IUndoableCommand SetTextAlignment(TextElement element, TextAlignment alignment) =>
+        new SetPropertyCommand<TextElement, TextAlignment>(
+            element, nameof(TextElement.Alignment), "Alignement du texte", e => e.Alignment, (e, v) => e.Alignment = v, alignment);
+
     /// <summary>Change la couleur du texte.</summary>
     /// <param name="element">Zone de texte.</param>
     /// <param name="color">Nouvelle couleur.</param>
@@ -67,6 +83,22 @@ public static class EditCommands
     public static IUndoableCommand SetShapeFill(ShapeElement element, ArgbColor color) =>
         new SetPropertyCommand<ShapeElement, ArgbColor>(
             element, nameof(ShapeElement.Fill), "Remplissage de la forme", e => e.Fill, (e, v) => e.Fill = v, color);
+
+    /// <summary>Change la couleur du contour d'une forme.</summary>
+    /// <param name="element">Forme.</param>
+    /// <param name="color">Nouvelle couleur du contour.</param>
+    /// <returns>Commande à passer à <see cref="UndoHistory.Execute"/>.</returns>
+    public static IUndoableCommand SetShapeStroke(ShapeElement element, ArgbColor color) =>
+        new SetPropertyCommand<ShapeElement, ArgbColor>(
+            element, nameof(ShapeElement.Stroke), "Contour de la forme", e => e.Stroke, (e, v) => e.Stroke = v, color);
+
+    /// <summary>Change l'épaisseur du contour d'une forme.</summary>
+    /// <param name="element">Forme.</param>
+    /// <param name="strokeWidth">Nouvelle épaisseur.</param>
+    /// <returns>Commande à passer à <see cref="UndoHistory.Execute"/>.</returns>
+    public static IUndoableCommand SetShapeStrokeWidth(ShapeElement element, double strokeWidth) =>
+        new SetPropertyCommand<ShapeElement, double>(
+            element, nameof(ShapeElement.StrokeWidth), "Épaisseur du contour", e => e.StrokeWidth, (e, v) => e.StrokeWidth = v, strokeWidth);
 
     /// <summary>Change la couleur de fond d'une diapositive.</summary>
     /// <param name="slide">Diapositive.</param>
