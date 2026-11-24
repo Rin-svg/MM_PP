@@ -18,10 +18,12 @@ public class CommandsTests
         var slide = new Slide();
 
         history.Execute(new AddSlideCommand(presentation, slide, 1));
-        Assert.Equal(2, presentation.Slides.Count);
+        Assert.Collection(presentation.Slides,
+            _ => { },
+            _ => { });
 
         history.Undo();
-        Assert.Equal(1, presentation.Slides.Count);
+        Assert.Single(presentation.Slides);
 
         history.Redo();
         Assert.True(ReferenceEquals(presentation.Slides[1], slide));
@@ -38,12 +40,17 @@ public class CommandsTests
         presentation.InsertSlide(2, last);
 
         history.Execute(new DeleteSlideCommand(presentation, middle));
-        Assert.Equal(2, presentation.Slides.Count);
+        Assert.Collection(presentation.Slides,
+            _ => { },
+            _ => { });
         Assert.True(ReferenceEquals(presentation.Slides[1], last));
 
         history.Undo();
 
-        Assert.Equal(3, presentation.Slides.Count);
+        Assert.Collection(presentation.Slides,
+            _ => { },
+            _ => { },
+            _ => { });
         Assert.True(ReferenceEquals(presentation.Slides[1], middle));
     }
 
@@ -72,7 +79,7 @@ public class CommandsTests
         Assert.Throws<DocumentValidationException>(
             () => history.Execute(new DeleteSlideCommand(presentation, presentation.Slides[0])));
 
-        Assert.Equal(1, presentation.Slides.Count);
+        Assert.Single(presentation.Slides);
         Assert.False(history.CanUndo);
         Assert.False(history.IsModified);
     }
@@ -88,9 +95,12 @@ public class CommandsTests
 
         history.Execute(new AddSlideCommand(presentation, original.Clone(), 1, "Dupliquer la diapositive"));
 
-        Assert.Equal(3, presentation.Slides.Count);
+        Assert.Collection(presentation.Slides,
+            _ => { },
+            _ => { },
+            _ => { });
         Assert.True(presentation.Slides[1].Id != original.Id);
-        Assert.Equal(1, presentation.Slides[1].Elements.Count);
+        Assert.Single(presentation.Slides[1].Elements);
         Assert.Equal("Dupliquer la diapositive", history.UndoDescription);
     }
 
@@ -149,9 +159,9 @@ public class CommandsTests
         TextElement element = TestSupport.NewText();
 
         history.Execute(new AddElementCommand(slide, element));
-        Assert.Equal(1, slide.Elements.Count);
+        Assert.Single(slide.Elements);
         history.Undo();
-        Assert.Equal(0, slide.Elements.Count);
+        Assert.Empty(slide.Elements);
         history.Redo();
 
         Assert.True(ReferenceEquals(slide.Elements[0], element));
@@ -169,7 +179,7 @@ public class CommandsTests
 
         Assert.Throws<DocumentValidationException>(() => history.Execute(new AddElementCommand(slide, TestSupport.NewText())));
 
-        Assert.Equal(Limits.MaxElementsPerSlide, slide.Elements.Count);
+        Assert.True(slide.Elements.Count == Limits.MaxElementsPerSlide);
         Assert.False(history.CanUndo);
     }
 
