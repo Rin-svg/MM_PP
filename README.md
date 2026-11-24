@@ -2,7 +2,7 @@
 
 Projet de cours réalisé en **équipe de 5** : une application de présentation « type PowerPoint », écrite en C# avec une interface WinForms.
 
-**État actuel : M1 terminé; M3 implémenté sur `feat/presenters-m3` (12 tests).** Le modèle, la validation et l'historique du Core sont couverts par 215 tests. Les présentateurs et leurs contrats sont implémentés et testés sans fenêtre. La PR M3 reste à relire et à fusionner avant de considérer ce jalon intégré à `main`. Le stockage `.slds` (M2) et l'interface (M4+) restent à réaliser.
+**État actuel : M1, M2 et M3 terminés; M2 est terminé localement sur `feat/persistance-m2-slds`.** Le modèle, la validation et l'historique du Core sont couverts par 215 tests. Les présentateurs sont couverts par 12 tests et le stockage `.slds` par 12 tests. Les médias sont stockés dans `media/` et validés avant leur décodage (format, taille et dimensions); les tests couvrent aussi les archives compressées excessives et les chemins malveillants.
 
 ## Démarrage rapide
 
@@ -24,7 +24,7 @@ Les dépendances vont dans un seul sens : **UI → Presenters → Core ← Infra
 | Projet | Cible | Rôle | Jalon | Responsable |
 |---|---|---|---|---|
 | `SlideStudio.Core` | net10.0 | Modèle (`Presentation`, `Slide`, éléments), validation, commandes, historique annuler/rétablir. Aucune dépendance. | **M1 ✔** | Tout le groupe : toute modification passe par une PR relue par **2 personnes** |
-| `SlideStudio.Infrastructure` | net10.0 | Format de fichier `.slds`, écriture sûre, copie de secours, lecture d'images. | M2 | Membre 1 |
+| `SlideStudio.Infrastructure` | net10.0 | Archive `.slds`, sérialisation JSON, écriture atomique avec copie de secours, lecture des présentations. | **M2 ✔** | Membre 1 |
 | `SlideStudio.Presenters` | net10.0 | Logique de chaque écran (patron MVP), testable sans fenêtre. | M3 (implémenté, PR à intégrer) | Membre 2 |
 | `SlideStudio.UI` | net10.0-windows | Formulaires WinForms « bêtes » : affichage et événements seulement. | M4, M5 | Membres 3 et 4 |
 | Diaporama, export, design, qualité | UI + documentation | Mode présentation, export, thèmes, tests d'intégration, CI. | M6, M7 | Membre 5 |
@@ -92,9 +92,9 @@ Chaque tâche ci-dessous devient une **Issue GitHub** (une par ligne de liste), 
    | `IDialogService`, interfaces de vues (`IMainView`…) | Presenters | Membre 2 | 3, 4 |
    | `SlideRenderer` (dessiner une diapositive à une échelle) | UI | Membre 4 | 3 (miniatures), 5 (diaporama, export) |
 
-3. **Prochaine priorité — intégrer M3 et réaliser M2.** Relire et fusionner la PR `feat/presenters-m3`, puis implémenter `IDocumentStorage` dans Infrastructure : les présentateurs ont le contrat, mais l'ouverture et l'enregistrement ne fonctionneront réellement qu'une fois le stockage fourni.
+3. **Terminer M2.** Relire puis fusionner `feat/persistance-m2-slds` après avoir ajouté les médias embarqués et leurs tests de sécurité; le présentateur pourra alors ouvrir et enregistrer réellement.
 4. **Démarrer tôt `SlideRenderer` (M5).** Le livrer dès que possible : le panneau de miniatures de M4 et le diaporama/export en dépendent.
-5. **Étape 2 — Développement en parallèle.** La fenêtre principale M4 peut avancer en parallèle sur les menus, raccourcis et panneaux; brancher l'ouverture/enregistrement après M2, et les miniatures après le renderer.
+5. **Étape 2 — Développement en parallèle.** M4 peut avancer sur les menus, raccourcis et panneaux; brancher l'ouverture/enregistrement après M2, et les miniatures après le renderer.
 6. **Étape 3 — Intégration.** Le membre 3 assemble les couches ; le membre 5 déroule les scénarios de test ; tout le monde corrige son périmètre.
 7. **Étape 4 — Finitions et rendu (M7).** Thèmes, accessibilité, échelle d'affichage, documentation, démonstration.
 

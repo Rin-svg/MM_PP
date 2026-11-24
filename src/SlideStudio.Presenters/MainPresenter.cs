@@ -13,6 +13,7 @@ public sealed class MainPresenter
     private readonly IDocumentStorage _storage;
     private readonly UndoHistory _history;
     private Presentation _presentation;
+    private MediaStore _mediaStore = new();
     private Slide? _selectedSlide;
     private string? _fileName;
     private bool _isBusy;
@@ -35,6 +36,7 @@ public sealed class MainPresenter
         _history.Changed += (_, _) => Refresh();
 
         _presentation = new Presentation();
+        _mediaStore = new MediaStore();
         _selectedSlide = _presentation.Slides[0];
         Refresh();
     }
@@ -61,6 +63,7 @@ public sealed class MainPresenter
         }
 
         _presentation = new Presentation();
+        _mediaStore = new MediaStore();
         _selectedSlide = _presentation.Slides[0];
         _fileName = null;
         _history.Clear();
@@ -97,9 +100,10 @@ public sealed class MainPresenter
         _isBusy = true;
         try
         {
-            Presentation presentation = _storage.Open(fileName);
-            _presentation = presentation;
-            _selectedSlide = presentation.Slides[0];
+            DocumentPackage package = _storage.OpenPackage(fileName);
+            _presentation = package.Presentation;
+            _mediaStore = package.Media;
+            _selectedSlide = _presentation.Slides[0];
             _fileName = fileName;
             _history.Clear();
             Refresh();
@@ -132,7 +136,7 @@ public sealed class MainPresenter
         _isBusy = true;
         try
         {
-            _storage.Save(_presentation, fileName);
+            _storage.SavePackage(new DocumentPackage(_presentation, _mediaStore), fileName);
             _fileName = fileName;
             _history.MarkSaved();
             Refresh();
@@ -177,6 +181,7 @@ public sealed class MainPresenter
         }
 
         _presentation = new Presentation();
+        _mediaStore = new MediaStore();
         _selectedSlide = _presentation.Slides[0];
         _fileName = null;
         _history.Clear();

@@ -14,8 +14,8 @@ public class ModelTests
         var presentation = new Presentation();
 
         Assert.Equal(Presentation.DefaultTitle, presentation.Title);
-        Assert.Equal(1, presentation.Slides.Count);
-        Assert.Equal(0, presentation.Slides[0].Elements.Count);
+        Assert.Single(presentation.Slides);
+        Assert.Empty(presentation.Slides[0].Elements);
     }
 
     [Fact]
@@ -40,11 +40,11 @@ public class ModelTests
             presentation.InsertSlide(presentation.Slides.Count, new Slide());
         }
 
-        Assert.Equal(Limits.MaxSlides, presentation.Slides.Count);
+        Assert.True(presentation.Slides.Count == Limits.MaxSlides);
         DocumentValidationException error = Assert.Throws<DocumentValidationException>(
             () => presentation.InsertSlide(0, new Slide()));
         Assert.Contains("500", error.Message);
-        Assert.Equal(Limits.MaxSlides, presentation.Slides.Count);
+        Assert.True(presentation.Slides.Count == Limits.MaxSlides);
     }
 
     [Fact]
@@ -78,7 +78,7 @@ public class ModelTests
             () => presentation.RemoveSlide(presentation.Slides[0]));
 
         Assert.Contains("dernière diapositive", error.Message);
-        Assert.Equal(1, presentation.Slides.Count);
+        Assert.Single(presentation.Slides);
     }
 
     [Fact]
@@ -98,7 +98,9 @@ public class ModelTests
         Assert.Throws<ArgumentOutOfRangeException>(() => presentation.InsertSlide(-1, new Slide()));
         Assert.Throws<ArgumentOutOfRangeException>(() => presentation.InsertSlide(2, new Slide()));
         presentation.InsertSlide(1, new Slide());
-        Assert.Equal(2, presentation.Slides.Count);
+        Assert.Collection(presentation.Slides,
+            _ => { },
+            _ => { });
     }
 
     [Fact]
@@ -145,7 +147,7 @@ public class ModelTests
         }
 
         Assert.Throws<DocumentValidationException>(() => slide.AddElement(TestSupport.NewText()));
-        Assert.Equal(Limits.MaxElementsPerSlide, slide.Elements.Count);
+        Assert.True(slide.Elements.Count == Limits.MaxElementsPerSlide);
     }
 
     [Fact]
@@ -156,7 +158,7 @@ public class ModelTests
         slide.AddElement(element);
 
         Assert.Throws<DocumentValidationException>(() => slide.AddElement(element));
-        Assert.Equal(1, slide.Elements.Count);
+        Assert.Single(slide.Elements);
     }
 
     [Fact]
@@ -223,7 +225,10 @@ public class ModelTests
 
         Assert.True(copy.Id != slide.Id);
         Assert.Equal(slide.Background, copy.Background);
-        Assert.Equal(3, copy.Elements.Count);
+        Assert.Collection(copy.Elements,
+            _ => { },
+            _ => { },
+            _ => { });
         for (int i = 0; i < slide.Elements.Count; i++)
         {
             Assert.True(copy.Elements[i].Id != slide.Elements[i].Id);
@@ -250,7 +255,7 @@ public class ModelTests
 
         Assert.Equal("original", text.Text);
         Assert.Equal(TestSupport.ValidFrame(), text.Frame);
-        Assert.Equal(1, slide.Elements.Count);
+        Assert.Single(slide.Elements);
     }
 
     [Fact]
