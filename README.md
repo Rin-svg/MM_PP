@@ -2,7 +2,7 @@
 
 Projet de cours réalisé en **équipe de 5** : une application de présentation « type PowerPoint », écrite en C# avec une interface WinForms.
 
-**État actuel : M1 terminé; M3 terminé; M2 en cours sur `feat/persistance-m2-slds`.** Le modèle, la validation et l'historique du Core sont couverts par 215 tests. Les présentateurs sont couverts par 12 tests et l'implémentation de stockage `.slds` par 6 tests. M2 couvre actuellement le format JSON archive zip, les aller-retours texte/forme/image, l'écriture atomique avec copie de secours et les fichiers hostiles.
+**État actuel : M1, M2 et M3 terminés; M2 est terminé localement sur `feat/persistance-m2-slds`.** Le modèle, la validation et l'historique du Core sont couverts par 215 tests. Les présentateurs sont couverts par 12 tests et le stockage `.slds` par 12 tests. Les médias sont stockés dans `media/` et validés avant leur décodage (format, taille et dimensions); les tests couvrent aussi les archives compressées excessives et les chemins malveillants.
 
 ## Démarrage rapide
 
@@ -24,7 +24,7 @@ Les dépendances vont dans un seul sens : **UI → Presenters → Core ← Infra
 | Projet | Cible | Rôle | Jalon | Responsable |
 |---|---|---|---|---|
 | `SlideStudio.Core` | net10.0 | Modèle (`Presentation`, `Slide`, éléments), validation, commandes, historique annuler/rétablir. Aucune dépendance. | **M1 ✔** | Tout le groupe : toute modification passe par une PR relue par **2 personnes** |
-| `SlideStudio.Infrastructure` | net10.0 | Archive `.slds`, sérialisation JSON, écriture atomique avec copie de secours, lecture des présentations. | M2 (en cours) | Membre 1 |
+| `SlideStudio.Infrastructure` | net10.0 | Archive `.slds`, sérialisation JSON, écriture atomique avec copie de secours, lecture des présentations. | **M2 ✔** | Membre 1 |
 | `SlideStudio.Presenters` | net10.0 | Logique de chaque écran (patron MVP), testable sans fenêtre. | M3 (implémenté, PR à intégrer) | Membre 2 |
 | `SlideStudio.UI` | net10.0-windows | Formulaires WinForms « bêtes » : affichage et événements seulement. | M4, M5 | Membres 3 et 4 |
 | Diaporama, export, design, qualité | UI + documentation | Mode présentation, export, thèmes, tests d'intégration, CI. | M6, M7 | Membre 5 |

@@ -168,9 +168,9 @@ public sealed class MainPresenterTests
         public Presentation? DocumentToOpen { get; set; }
         public int SaveCount { get; set; }
 
-        public Presentation Open(string fileName) =>
-            DocumentToOpen ?? new Presentation();
+        public DocumentPackage OpenPackage(string fileName) =>
+            new(DocumentToOpen ?? new Presentation());
 
-        public void Save(Presentation presentation, string fileName) => SaveCount++;
+        public void SavePackage(DocumentPackage package, string fileName) => SaveCount++;
     }
 }
