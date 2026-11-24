@@ -2,7 +2,7 @@
 
 Projet de cours réalisé en **équipe de 5** : une application de présentation « type PowerPoint », écrite en C# avec une interface WinForms.
 
-**État actuel : M1, M2 et M3 terminés; M2 est terminé localement sur `feat/persistance-m2-slds`.** Le modèle, la validation et l'historique du Core sont couverts par 215 tests. Les présentateurs sont couverts par 12 tests et le stockage `.slds` par 12 tests. Les médias sont stockés dans `media/` et validés avant leur décodage (format, taille et dimensions); les tests couvrent aussi les archives compressées excessives et les chemins malveillants.
+**État actuel : M1, M2 et M3 sont fusionnés dans `main`.** Le modèle, la validation et l'historique du Core sont couverts par 215 tests; les Presenters par 12 tests; et le stockage `.slds` par 12 tests. Les médias sont embarqués dans `media/` et validés avant décodage (format, taille et dimensions). M4 et les jalons suivants restent à réaliser.
 
 ## Démarrage rapide
 
@@ -15,6 +15,17 @@ dotnet build src/SlideStudio.Core          # compile en mode strict (avertisseme
 dotnet test  tests/SlideStudio.Core.Tests  # lance les 215 tests
 ```
 
+Pour compiler toute la solution et lancer les trois suites de tests, depuis Windows :
+
+```powershell
+dotnet build SlideStudio.sln
+dotnet test tests/SlideStudio.Core.Tests
+dotnet test tests/SlideStudio.Presenters.Tests
+dotnet test tests/SlideStudio.Infrastructure.Tests
+```
+
+Les tests Infrastructure sont lancés explicitement : le projet de tests n'est pas exécuté par `dotnet test SlideStudio.sln`.
+
 Avant votre premier commit : configurez votre identité git (voir [CONTRIBUTING.md](CONTRIBUTING.md), section 1), sinon vos commits ne seront pas associés à votre profil GitHub.
 
 ## Architecture
@@ -24,9 +35,9 @@ Les dépendances vont dans un seul sens : **UI → Presenters → Core ← Infra
 | Projet | Cible | Rôle | Jalon | Responsable |
 |---|---|---|---|---|
 | `SlideStudio.Core` | net10.0 | Modèle (`Presentation`, `Slide`, éléments), validation, commandes, historique annuler/rétablir. Aucune dépendance. | **M1 ✔** | Tout le groupe : toute modification passe par une PR relue par **2 personnes** |
-| `SlideStudio.Infrastructure` | net10.0 | Archive `.slds`, sérialisation JSON, écriture atomique avec copie de secours, lecture des présentations. | **M2 ✔** | Membre 1 |
-| `SlideStudio.Presenters` | net10.0 | Logique de chaque écran (patron MVP), testable sans fenêtre. | M3 (implémenté, PR à intégrer) | Membre 2 |
-| `SlideStudio.UI` | net10.0-windows | Formulaires WinForms « bêtes » : affichage et événements seulement. | M4, M5 | Membres 3 et 4 |
+| `SlideStudio.Infrastructure` (`SlideStudio/SlideStudio.Infrastructure`) | net10.0 | Archive `.slds`, sérialisation JSON, écriture atomique avec copie de secours, lecture des présentations. | **M2 ✔** | Membre 1 |
+| `SlideStudio.Presenters` (`src/SlideStudio.Presenters`) | net10.0 | Logique de chaque écran (patron MVP), testable sans fenêtre. | **M3 ✔** | Membre 2 |
+| `SlideStudio.UI` (`SlideStudio/SlideStudio.UI`) | net10.0-windows | Interface WinForms : affichage et événements; fenêtre encore à compléter. | M4, M5 | Membres 3 et 4 |
 | Diaporama, export, design, qualité | UI + documentation | Mode présentation, export, thèmes, tests d'intégration, CI. | M6, M7 | Membre 5 |
 
 ## L'équipe et la répartition des tâches
@@ -35,11 +46,11 @@ Les dépendances vont dans un seul sens : **UI → Presenters → Core ← Infra
 
 | # | Rôle | Responsable (pseudo GitHub) | Zone du code | Jalon |
 |---|---|---|---|---|
-| 1 | Persistance et sécurité des fichiers | *à compléter* | `src/SlideStudio.Infrastructure` | M2 |
+| 1 | Persistance et sécurité des fichiers | *à compléter* | `SlideStudio/SlideStudio.Infrastructure` | M2 |
 | 2 | Logique applicative (Presenters) | *à compléter* | `src/SlideStudio.Presenters` | M3 |
-| 3 | Fenêtre principale et panneaux | Atangana-Monique | `src/SlideStudio.UI` (hors `Canvas/`) | M4 |
-| 4 | Zone de dessin et édition | *à compléter* | `src/SlideStudio.UI/Canvas` | M5 |
-| 5 | Diaporama, export, design et qualité | *à compléter* | `src/SlideStudio.UI/Slideshow`, `docs/`, CI | M6, M7 |
+| 3 | Fenêtre principale et panneaux | Atangana-Monique | `SlideStudio/SlideStudio.UI` (hors `Canvas/`) | M4 |
+| 4 | Zone de dessin et édition | *à compléter* | `SlideStudio/SlideStudio.UI/Canvas` | M5 |
+| 5 | Diaporama, export, design et qualité | *à compléter* | `SlideStudio/SlideStudio.UI/Slideshow`, `docs/`, CI | M6, M7 |
 
 Chaque tâche ci-dessous devient une **Issue GitHub** (une par ligne de liste), assignée à son responsable et suivie dans un tableau « À faire / En cours / En revue / Terminé ».
 
@@ -60,7 +71,7 @@ Chaque tâche ci-dessous devient une **Issue GitHub** (une par ligne de liste), 
 - *Livrable :* Presenters + tests. *Fournit à :* membres 3 et 4.
 
 ### Membre 3 — Fenêtre principale et panneaux (jalon M4)
-- Créer le projet WinForms (`net10.0-windows`) et `Program.cs` : gestion de l'échelle d'affichage (DPI), filets pour les erreurs non gérées, assemblage des couches.
+- Compléter le projet WinForms existant (`SlideStudio/SlideStudio.UI`, `net10.0-windows`) et `Program.cs` : gestion de l'échelle d'affichage (DPI), filets pour les erreurs non gérées, assemblage des couches. Actuellement, `Program.cs` lance seulement le formulaire vide `Form1`.
 - Fenêtre principale : menus, barre d'outils (ou ruban simplifié), raccourcis (Ctrl+N/O/S/Z/Y…), barre d'état, astérisque « modifié » dans le titre.
 - Panneau de miniatures (liste fluide même avec 500 diapositives, glisser-déposer pour réordonner, menu contextuel).
 - Panneau de propriétés (police, taille, couleurs) et boîtes de dialogue (`WinFormsDialogService`).
@@ -92,11 +103,11 @@ Chaque tâche ci-dessous devient une **Issue GitHub** (une par ligne de liste), 
    | `IDialogService`, interfaces de vues (`IMainView`…) | Presenters | Membre 2 | 3, 4 |
    | `SlideRenderer` (dessiner une diapositive à une échelle) | UI | Membre 4 | 3 (miniatures), 5 (diaporama, export) |
 
-3. **Terminer M2.** Relire puis fusionner `feat/persistance-m2-slds` après avoir ajouté les médias embarqués et leurs tests de sécurité; le présentateur pourra alors ouvrir et enregistrer réellement.
-4. **Démarrer tôt `SlideRenderer` (M5).** Le livrer dès que possible : le panneau de miniatures de M4 et le diaporama/export en dépendent.
-5. **Étape 2 — Développement en parallèle.** M4 peut avancer sur les menus, raccourcis et panneaux; brancher l'ouverture/enregistrement après M2, et les miniatures après le renderer.
-6. **Étape 3 — Intégration.** Le membre 3 assemble les couches ; le membre 5 déroule les scénarios de test ; tout le monde corrige son périmètre.
-7. **Étape 4 — Finitions et rendu (M7).** Thèmes, accessibilité, échelle d'affichage, documentation, démonstration.
+3. **M1, M2 et M3 sont intégrés dans `main`.** Le stockage embarque les médias, et `MainPresenter` utilise le contrat de paquet pour ouvrir et enregistrer.
+4. **Poursuivre M4 et démarrer tôt `SlideRenderer` (M5).** Le projet WinForms existe, mais sa fenêtre principale reste un formulaire vide. Livrer le renderer dès que possible : les miniatures de M4 et le diaporama/export en dépendent.
+5. **Développement en parallèle.** M4 peut avancer sur les menus, raccourcis et panneaux; brancher l'ouverture/enregistrement via M2, et les miniatures après le renderer.
+6. **Intégration.** Le membre 3 assemble les couches ; le membre 5 déroule les scénarios de test ; tout le monde corrige son périmètre.
+7. **Finitions et rendu (M7).** Thèmes, accessibilité, échelle d'affichage, documentation, démonstration.
 
 ## Travailler avec git (résumé)
 
