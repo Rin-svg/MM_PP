@@ -79,10 +79,10 @@ public sealed class BackgroundDto2
     public string? ImageId { get; set; }
 }
 
-/// <summary>
-/// Élément de diapositive. Le champ "type" discrimine Text / Image / etc.
-/// </summary>
-public sealed class ElementDto
+
+// Élément de diapositive. Le champ "type" discrimine Text / Image / etc.
+
+public sealed class ElementDto2
 {
     [JsonPropertyName("id")]
     public string Id { get; set; } = string.Empty;
@@ -119,4 +119,25 @@ public sealed class ElementDto
 
 public class TextStyleDto
 {
+}
+
+public sealed class TextStyleDto2
+{
+    [JsonPropertyName("fontFamily")]
+    public string FontFamily { get; set; } = "Segoe UI";
+
+    [JsonPropertyName("fontSize")]
+    public double FontSize { get; set; } = 24;
+
+    [JsonPropertyName("bold")]
+    public bool Bold { get; set; }
+
+    [JsonPropertyName("italic")]
+    public bool Italic { get; set; }
+
+    [JsonPropertyName("color")]
+    public string Color { get; set; } = "#000000";
+
+    [JsonPropertyName("alignment")]
+    public string Alignment { get; set; } = "Left";
 }
