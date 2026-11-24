@@ -56,11 +56,5 @@ public sealed class SlideDto
     [JsonPropertyName("elements")]
     public List<ElementDto> Elements { get; set; } = new();
 
-    public class BackgroundDto
-    {
-    }
-
-    public class ElementDto
-    {
-    }
+   
 }
