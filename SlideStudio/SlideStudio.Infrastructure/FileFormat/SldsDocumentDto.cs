@@ -67,7 +67,7 @@ public class BackgroundDto
 {
 }
 
-public sealed class BackgroundDto
+public sealed class BackgroundDto2
 {
     [JsonPropertyName("type")]
     public string Type { get; set; } = "Solid";
@@ -75,6 +75,44 @@ public sealed class BackgroundDto
     [JsonPropertyName("color")]
     public string? Color { get; set; }
 
+    [JsonPropertyName("imageId")]
+    public string? ImageId { get; set; }
+}
+
+/// <summary>
+/// Élément de diapositive. Le champ "type" discrimine Text / Image / etc.
+/// </summary>
+public sealed class ElementDto
+{
+    [JsonPropertyName("id")]
+    public string Id { get; set; } = string.Empty;
+
+    [JsonPropertyName("type")]
+    public string Type { get; set; } = string.Empty; // "Text" | "Image"
+
+    [JsonPropertyName("x")]
+    public double X { get; set; }
+
+    [JsonPropertyName("y")]
+    public double Y { get; set; }
+
+    [JsonPropertyName("width")]
+    public double Width { get; set; }
+
+    [JsonPropertyName("height")]
+    public double Height { get; set; }
+
+    [JsonPropertyName("zIndex")]
+    public int ZIndex { get; set; }
+
+    // --- Propriétés spécifiques Text ---
+    [JsonPropertyName("content")]
+    public string? Content { get; set; }
+
+    [JsonPropertyName("style")]
+    public TextStyleDto? Style { get; set; }
+
+    // --- Propriétés spécifiques Image ---
     [JsonPropertyName("imageId")]
     public string? ImageId { get; set; }
 }
