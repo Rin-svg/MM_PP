@@ -37,7 +37,7 @@ Les dépendances vont dans un seul sens : **UI → Presenters → Core ← Infra
 |---|---|---|---|---|
 | 1 | Persistance et sécurité des fichiers | *à compléter* | `src/SlideStudio.Infrastructure` | M2 |
 | 2 | Logique applicative (Presenters) | *à compléter* | `src/SlideStudio.Presenters` | M3 |
-| 3 | Fenêtre principale et panneaux | *à compléter* | `src/SlideStudio.UI` (hors `Canvas/`) | M4 |
+| 3 | Fenêtre principale et panneaux | Atangana-Monique | `src/SlideStudio.UI` (hors `Canvas/`) | M4 |
 | 4 | Zone de dessin et édition | *à compléter* | `src/SlideStudio.UI/Canvas` | M5 |
 | 5 | Diaporama, export, design et qualité | *à compléter* | `src/SlideStudio.UI/Slideshow`, `docs/`, CI | M6, M7 |
 
