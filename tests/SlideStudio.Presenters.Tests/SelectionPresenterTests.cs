@@ -46,6 +46,51 @@ public sealed class SelectionPresenterTests
         Assert.Same(second, slide.Elements[0]);
     }
 
+    [Fact]
+    public void Formatting_commands_update_all_selected_text_elements()
+    {
+        Slide slide = new();
+        TextElement first = new(new ElementFrame(10, 10, 100, 30), "Premier");
+        TextElement second = new(new ElementFrame(20, 20, 100, 30), "Deuxième");
+        slide.AddElement(first);
+        slide.AddElement(second);
+        UndoHistory history = new();
+        SelectionPresenter presenter = new(
+            new FakeSelectionView(),
+            history,
+            slide);
+        presenter.SetSelection([first, second]);
+
+        presenter.SetFontFamily("Arial");
+        presenter.SetFontSize(32);
+        presenter.SetTextColor(ArgbColor.FromRgb(10, 20, 30));
+        presenter.SetTextAlignment(TextAlignment.Center);
+
+        Assert.Equal("Arial", first.FontFamily);
+        Assert.Equal(32, second.FontSizePoints);
+        Assert.Equal(ArgbColor.FromRgb(10, 20, 30), first.Color);
+        Assert.Equal(TextAlignment.Center, second.Alignment);
+    }
+
+    [Fact]
+    public void Duplicate_creates_new_elements_and_keeps_them_selected()
+    {
+        Slide slide = new();
+        TextElement original = new(new ElementFrame(10, 10, 100, 30), "Original");
+        slide.AddElement(original);
+        SelectionPresenter presenter = new(
+            new FakeSelectionView(),
+            new UndoHistory(),
+            slide);
+        presenter.SetSelection([original]);
+
+        Assert.True(presenter.Duplicate());
+
+        Assert.Equal(2, slide.Elements.Count);
+        Assert.Single(presenter.Selection);
+        Assert.NotSame(original, presenter.Selection[0]);
+    }
+
     private sealed class FakeSelectionView : ISelectionView
     {
         public void SetSelection(IReadOnlyList<SlideElement> selection) { }
