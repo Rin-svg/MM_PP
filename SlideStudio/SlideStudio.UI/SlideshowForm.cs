@@ -3,6 +3,9 @@ using System;
 using System.Collections.Generic;
 using System.Drawing;
 using System.Windows.Forms;
+using SlideStudio.Core;
+using SlideStudio.Core.Model;
+using SlideStudio.UI.Canvas;
 
 namespace SlideStudio.UI;
 
@@ -10,9 +13,12 @@ namespace SlideStudio.UI;
 public class SlideshowForm : Form
 {
     private readonly List<Image> _slides;
+    private readonly Slide[]? _presentationSlides;
+    private readonly SlideRenderer? _renderer;
     private readonly PictureBox _pictureBox;
     private int _currentIndex;
     private bool _blackScreen;
+    private Bitmap? _renderedSlide;
 
     /// <summary>Crée un diaporama à partir d'images, qu'il copie et libère avec la fenêtre.</summary>
     public SlideshowForm(IEnumerable<Image> slides)
@@ -42,24 +48,56 @@ public class SlideshowForm : Form
             throw new ArgumentException("Le diaporama doit contenir au moins une image.", nameof(slides));
         }
 
+        _pictureBox = CreatePictureBox();
+        InitializeWindow();
+        Controls.Add(_pictureBox);
+        ShowSlide();
+    }
+
+    /// <summary>Crée un diaporama directement depuis une présentation et ses médias embarqués.</summary>
+    public SlideshowForm(IReadOnlyList<Slide> slides, MediaStore mediaStore)
+    {
+        ArgumentNullException.ThrowIfNull(slides);
+        ArgumentNullException.ThrowIfNull(mediaStore);
+        if (slides.Count == 0)
+        {
+            throw new ArgumentException("Le diaporama doit contenir au moins une diapositive.", nameof(slides));
+        }
+
+        _slides = [];
+        _presentationSlides = slides.ToArray();
+        _renderer = new SlideRenderer();
+        _renderer.SetMediaStore(mediaStore);
+        _pictureBox = CreatePictureBox();
+        InitializeWindow();
+        Controls.Add(_pictureBox);
+        try
+        {
+            ShowSlide();
+        }
+        catch
+        {
+            _renderer.Dispose();
+            _pictureBox.Dispose();
+            throw;
+        }
+    }
+
+    private static PictureBox CreatePictureBox() => new()
+    {
+        Dock = DockStyle.Fill,
+        SizeMode = PictureBoxSizeMode.Zoom,
+        BackColor = Color.Black
+    };
+
+    private void InitializeWindow()
+    {
         Text = "SlideStudio - Diaporama";
         WindowState = FormWindowState.Maximized;
         FormBorderStyle = FormBorderStyle.None;
         BackColor = Color.Black;
         KeyPreview = true;
-
-        _pictureBox = new PictureBox
-        {
-            Dock = DockStyle.Fill,
-            SizeMode = PictureBoxSizeMode.Zoom,
-            BackColor = Color.Black
-        };
-
-        Controls.Add(_pictureBox);
-
         KeyDown += SlideshowForm_KeyDown;
-
-        ShowSlide();
     }
 
     /// <inheritdoc />
@@ -68,6 +106,8 @@ public class SlideshowForm : Form
         if (disposing)
         {
             _pictureBox.Image = null;
+            _renderedSlide?.Dispose();
+            _renderer?.Dispose();
             foreach (Image slide in _slides)
             {
                 slide.Dispose();
@@ -79,13 +119,22 @@ public class SlideshowForm : Form
 
     private void ShowSlide()
     {
-        if (_slides.Count == 0)
+        if (_presentationSlides is not null && _renderer is not null)
         {
-            return;
+            Bitmap renderedSlide = _renderer.Render(
+                _presentationSlides[_currentIndex],
+                new Size((int)Presentation.SlideWidth, (int)Presentation.SlideHeight));
+            Bitmap? previousSlide = _renderedSlide;
+            _renderedSlide = renderedSlide;
+            _pictureBox.Image = renderedSlide;
+            previousSlide?.Dispose();
+        }
+        else if (_slides.Count > 0)
+        {
+            _pictureBox.Image = _slides[_currentIndex];
         }
 
         _blackScreen = false;
-        _pictureBox.Image = _slides[_currentIndex];
         _pictureBox.Visible = true;
     }
 
@@ -109,9 +158,10 @@ public class SlideshowForm : Form
             return;
         }
 
+        int slideCount = _presentationSlides?.Length ?? _slides.Count;
         if (e.KeyCode == Keys.Right || e.KeyCode == Keys.Space)
         {
-            if (_currentIndex < _slides.Count - 1)
+            if (_currentIndex < slideCount - 1)
             {
                 _currentIndex++;
                 ShowSlide();

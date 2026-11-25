@@ -535,6 +535,11 @@ public partial class Form1 : Form, IMainView, ISelectionView
         slideMenu.DropDownItems.Add(_deleteMenuItem);
 
         ToolStripMenuItem slideshowMenu = new("Diaporama");
+        slideshowMenu.DropDownItems.Add(CreateMenuItem(
+            "Lancer la présentation",
+            Keys.F5,
+            StartPresentationSlideshow));
+        slideshowMenu.DropDownItems.Add(new ToolStripSeparator());
         slideshowMenu.DropDownItems.Add(CreateMenuItem("Depuis des images…", Keys.None, StartSlideshowButton_Click));
 
         menu.Items.AddRange([fileMenu, editMenu, slideMenu, slideshowMenu]);
@@ -611,7 +616,7 @@ public partial class Form1 : Form, IMainView, ISelectionView
         resetZoom.Click += (_, _) => _slideCanvas.ResetZoom();
         _toolStrip.Items.Add(resetZoom);
         _toolStrip.Items.Add(new ToolStripSeparator());
-        _toolStrip.Items.Add(CreateToolButton("Diaporama images", StartSlideshowButton_Click));
+        _toolStrip.Items.Add(CreateToolButton("Diaporama", StartPresentationSlideshow));
         _topPanel.Controls.Add(_toolStrip);
     }
 
@@ -1486,7 +1491,7 @@ public partial class Form1 : Form, IMainView, ISelectionView
 
         if (e.KeyCode == Keys.F5)
         {
-            StartSlideshowButton_Click(sender, EventArgs.Empty);
+            StartPresentationSlideshow(sender, EventArgs.Empty);
             e.SuppressKeyPress = true;
         }
     }
@@ -1540,6 +1545,24 @@ public partial class Form1 : Form, IMainView, ISelectionView
             {
                 image.Dispose();
             }
+        }
+    }
+
+    private void StartPresentationSlideshow(object? sender, EventArgs e)
+    {
+        try
+        {
+            using SlideshowForm slideshow = new(_presenter.Presentation.Slides, _presenter.MediaStore);
+            slideshow.ShowDialog(this);
+        }
+        catch (Exception exception) when (
+            exception is ArgumentException
+                or DocumentValidationException
+                or ExternalException
+                or InvalidOperationException
+                or OutOfMemoryException)
+        {
+            ShowUiError($"Impossible de lancer le diaporama : {exception.Message}");
         }
     }
 
