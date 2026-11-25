@@ -320,7 +320,7 @@ public partial class Form1 : Form, IMainView, ISelectionView
             FixedPanel = FixedPanel.Panel1,
             Panel1MinSize = 160,
             Panel2MinSize = 520,
-            SplitterDistance = 210
+            SplitterDistance = 260
         };
         _slideList.Dock = DockStyle.Fill;
         _slideList.DrawMode = DrawMode.OwnerDrawFixed;
