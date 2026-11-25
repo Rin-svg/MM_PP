@@ -250,8 +250,62 @@ public class CommandsTests
         history.Undo();
         Assert.Equal(before, element.Frame);
         history.Redo();
-
         Assert.Equal(after, element.Frame);
+    }
+
+    [Fact]
+    public void SetFramesCommand_ChangesMultipleElementsAsOneUndoableGesture()
+    {
+        UndoHistory history = new();
+        TextElement first = TestSupport.NewText("first");
+        TextElement second = TestSupport.NewText("second");
+        ElementFrame firstBefore = first.Frame;
+        ElementFrame secondBefore = second.Frame;
+        Guid gesture = Guid.NewGuid();
+
+        history.Execute(new SetFramesCommand(
+        [
+            (first, firstBefore.Moved(10, 15)),
+            (second, secondBefore.Moved(10, 15))
+        ],
+        gesture));
+        history.Execute(new SetFramesCommand(
+        [
+            (first, firstBefore.Moved(20, 30)),
+            (second, secondBefore.Moved(20, 30))
+        ],
+        gesture));
+
+        Assert.Equal(firstBefore.Moved(20, 30), first.Frame);
+        Assert.Equal(secondBefore.Moved(20, 30), second.Frame);
+        Assert.True(history.Undo());
+        Assert.Equal(firstBefore, first.Frame);
+        Assert.Equal(secondBefore, second.Frame);
+        Assert.False(history.CanUndo);
+        Assert.True(history.Redo());
+        Assert.Equal(firstBefore.Moved(20, 30), first.Frame);
+        Assert.Equal(secondBefore.Moved(20, 30), second.Frame);
+    }
+
+    [Fact]
+    public void SetFramesCommand_InvalidFrame_ChangesNothing()
+    {
+        UndoHistory history = new();
+        TextElement first = TestSupport.NewText("first");
+        TextElement second = TestSupport.NewText("second");
+        ElementFrame firstBefore = first.Frame;
+        ElementFrame secondBefore = second.Frame;
+
+        Assert.Throws<DocumentValidationException>(() => history.Execute(new SetFramesCommand(
+        [
+            (first, firstBefore.Moved(10, 10)),
+            (second, secondBefore with { RotationDegrees = 360 })
+        ],
+        Guid.NewGuid())));
+
+        Assert.Equal(firstBefore, first.Frame);
+        Assert.Equal(secondBefore, second.Frame);
+        Assert.False(history.CanUndo);
     }
 
     [Fact]
