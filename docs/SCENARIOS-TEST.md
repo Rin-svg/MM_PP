@@ -18,6 +18,7 @@
 - Vérifier les raccourcis clavier.
 - Depuis le canevas, vérifier Ctrl+A, les flèches, Maj+flèches, Suppr et Échap.
 - Parcourir les diapositives, les éléments et les propriétés avec Tab, Maj+Tab et les flèches; vérifier que le lecteur d'écran annonce leur nom et leur fonction.
+- Vérifier que le texte des boutons d'action et des menus reste lisible au repos, au survol et à l'activation (contraste ≥ 4,5:1).
 - Vérifier les messages d'erreur.
 - Vérifier la fermeture sans enregistrer.
 
