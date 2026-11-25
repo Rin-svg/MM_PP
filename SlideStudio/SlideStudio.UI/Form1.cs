@@ -50,6 +50,7 @@ public partial class Form1 : Form, IMainView, ISelectionView
     private readonly ToolStripButton _saveButton = new("Enregistrer");
     private readonly ToolStripButton _undoButton = new("Annuler");
     private readonly ToolStripButton _redoButton = new("Rétablir");
+    private readonly ToolStripLabel _zoomStatus = new("100 %");
     private readonly Panel _topPanel = new();
     private readonly Panel _documentHeader = new();
     private readonly BrandMark _brandMark = new();
@@ -327,8 +328,9 @@ public partial class Form1 : Form, IMainView, ISelectionView
         _welcomeScreen.ActionRequested += WelcomeScreen_ActionRequested;
         _loadingScreen.Completed += LoadingScreen_Completed;
         _slideCanvas.SelectionChanged += SlideCanvas_SelectionChanged;
-        _slideCanvas.FrameChangeRequested += SlideCanvas_FrameChangeRequested;
+        _slideCanvas.FramesChangeRequested += SlideCanvas_FramesChangeRequested;
         _slideCanvas.TextChangeRequested += SlideCanvas_TextChangeRequested;
+        _slideCanvas.ZoomChanged += (_, _) => _zoomStatus.Text = $"{_slideCanvas.ZoomFactor:P0}";
         FormClosed += (_, _) => _slideRenderer.Dispose();
         Controls.Add(_welcomeScreen);
         Controls.Add(_loadingScreen);
@@ -370,11 +372,11 @@ public partial class Form1 : Form, IMainView, ISelectionView
         _selectionPresenter?.SetSelection(e.Selection);
     }
 
-    private void SlideCanvas_FrameChangeRequested(object? sender, CanvasFrameChangedEventArgs e)
+    private void SlideCanvas_FramesChangeRequested(object? sender, CanvasFramesChangedEventArgs e)
     {
         try
         {
-            _presenter.History.Execute(EditCommands.SetFrame(e.Element, e.Frame, e.GestureId));
+            _presenter.History.Execute(new SetFramesCommand(e.Frames, e.GestureId));
         }
         catch (DocumentValidationException exception)
         {
@@ -587,6 +589,27 @@ public partial class Form1 : Form, IMainView, ISelectionView
             new ShapeElement(ShapeKind.Line, new ElementFrame(440, 250, 400, 220))));
         insertButton.DropDownItems.Add("Image…", null, (_, _) => InsertImage());
         _toolStrip.Items.Add(insertButton);
+        _toolStrip.Items.Add(new ToolStripSeparator());
+        ToolStripButton zoomOut = new("−")
+        {
+            ToolTipText = "Réduire le zoom du canevas"
+        };
+        zoomOut.Click += (_, _) => _slideCanvas.ZoomBy(1 / 1.1f);
+        _toolStrip.Items.Add(zoomOut);
+        _zoomStatus.ToolTipText = "Zoom du canevas (Ctrl + molette pour ajuster, bouton du milieu pour déplacer)";
+        _toolStrip.Items.Add(_zoomStatus);
+        ToolStripButton zoomIn = new("+")
+        {
+            ToolTipText = "Agrandir le zoom du canevas"
+        };
+        zoomIn.Click += (_, _) => _slideCanvas.ZoomBy(1.1f);
+        _toolStrip.Items.Add(zoomIn);
+        ToolStripButton resetZoom = new("Ajuster")
+        {
+            ToolTipText = "Ajuster la diapositive à la zone de travail"
+        };
+        resetZoom.Click += (_, _) => _slideCanvas.ResetZoom();
+        _toolStrip.Items.Add(resetZoom);
         _toolStrip.Items.Add(new ToolStripSeparator());
         _toolStrip.Items.Add(CreateToolButton("Diaporama images", StartSlideshowButton_Click));
         _topPanel.Controls.Add(_toolStrip);
