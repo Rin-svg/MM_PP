@@ -38,6 +38,15 @@ public partial class Form1 : Form, IMainView, ISelectionView
     private readonly ToolStripMenuItem _saveMenuItem = new("Enregistrer");
     private readonly ToolStripMenuItem _undoMenuItem = new("Annuler");
     private readonly ToolStripMenuItem _redoMenuItem = new("Rétablir");
+    private readonly ToolStripMenuItem _copyElementMenuItem = new("Copier");
+    private readonly ToolStripMenuItem _cutElementMenuItem = new("Couper");
+    private readonly ToolStripMenuItem _pasteElementMenuItem = new("Coller");
+    private readonly ToolStripMenuItem _duplicateElementMenuItem = new("Dupliquer les éléments");
+    private readonly ToolStripMenuItem _deleteElementMenuItem = new("Supprimer les éléments");
+    private readonly ToolStripMenuItem _bringToFrontMenuItem = new("Placer au premier plan");
+    private readonly ToolStripMenuItem _sendToBackMenuItem = new("Placer à l'arrière-plan");
+    private readonly ToolStripMenuItem _moveForwardMenuItem = new("Avancer d'un plan");
+    private readonly ToolStripMenuItem _moveBackwardMenuItem = new("Reculer d'un plan");
     private readonly ToolStripMenuItem _deleteMenuItem = new("Supprimer la diapositive");
     private readonly ToolStrip _toolStrip = new();
     private readonly StatusStrip _statusStrip = new();
@@ -116,7 +125,7 @@ public partial class Form1 : Form, IMainView, ISelectionView
                 }
                 else
                 {
-                    _selectionPresenter.SetSelection(_selectionPresenter.Selection);
+                    _selectionPresenter.SetSelection(_selectionPresenter.Selection.ToArray());
                 }
             }
             else
@@ -198,6 +207,15 @@ public partial class Form1 : Form, IMainView, ISelectionView
     /// <inheritdoc />
     public void SetSelectionActions(bool canCopy, bool canCut, bool canPaste, bool canDelete, bool canReorder)
     {
+        _copyElementMenuItem.Enabled = canCopy;
+        _cutElementMenuItem.Enabled = canCut;
+        _pasteElementMenuItem.Enabled = canPaste;
+        _duplicateElementMenuItem.Enabled = canCopy;
+        _deleteElementMenuItem.Enabled = canDelete;
+        _bringToFrontMenuItem.Enabled = canReorder;
+        _sendToBackMenuItem.Enabled = canReorder;
+        _moveForwardMenuItem.Enabled = canReorder;
+        _moveBackwardMenuItem.Enabled = canReorder;
         _selectionStatus.Text = _selectionPresenter?.Selection.Count switch
         {
             1 => "1 élément sélectionné",
@@ -264,6 +282,32 @@ public partial class Form1 : Form, IMainView, ISelectionView
         _redoMenuItem.ShortcutKeys = Keys.Control | Keys.Y;
         _redoMenuItem.Click += (_, _) => _presenter.Redo();
         editMenu.DropDownItems.Add(_redoMenuItem);
+        editMenu.DropDownItems.Add(new ToolStripSeparator());
+        ConfigureSelectionMenuItem(_copyElementMenuItem, Keys.Control | Keys.C, () => _selectionPresenter?.Copy());
+        ConfigureSelectionMenuItem(_cutElementMenuItem, Keys.Control | Keys.X, () => _selectionPresenter?.Cut());
+        ConfigureSelectionMenuItem(_pasteElementMenuItem, Keys.Control | Keys.V, () => _selectionPresenter?.Paste());
+        ConfigureSelectionMenuItem(_duplicateElementMenuItem, Keys.Control | Keys.Shift | Keys.D, () => _selectionPresenter?.Duplicate());
+        ConfigureSelectionMenuItem(_deleteElementMenuItem, Keys.None, () => _selectionPresenter?.Delete());
+        editMenu.DropDownItems.AddRange(
+        [
+            _copyElementMenuItem,
+            _cutElementMenuItem,
+            _pasteElementMenuItem,
+            _duplicateElementMenuItem,
+            _deleteElementMenuItem,
+            new ToolStripSeparator()
+        ]);
+        ConfigureSelectionMenuItem(_bringToFrontMenuItem, Keys.None, () => _selectionPresenter?.BringToFront());
+        ConfigureSelectionMenuItem(_sendToBackMenuItem, Keys.None, () => _selectionPresenter?.SendToBack());
+        ConfigureSelectionMenuItem(_moveForwardMenuItem, Keys.None, () => _selectionPresenter?.MoveForward());
+        ConfigureSelectionMenuItem(_moveBackwardMenuItem, Keys.None, () => _selectionPresenter?.MoveBackward());
+        editMenu.DropDownItems.AddRange(
+        [
+            _bringToFrontMenuItem,
+            _moveForwardMenuItem,
+            _moveBackwardMenuItem,
+            _sendToBackMenuItem
+        ]);
 
         ToolStripMenuItem slideMenu = new("Diapositive");
         slideMenu.DropDownItems.Add(CreateMenuItem("Nouvelle diapositive", Keys.Insert, (_, _) => _presenter.AddSlide()));
@@ -424,7 +468,10 @@ public partial class Form1 : Form, IMainView, ISelectionView
         };
         _elementList.Dock = DockStyle.Fill;
         _elementList.IntegralHeight = false;
+        _elementList.SelectionMode = SelectionMode.MultiExtended;
         _elementList.SelectedIndexChanged += ElementList_SelectedIndexChanged;
+        _elementList.MouseDown += ElementList_MouseDown;
+        _elementList.MouseUp += ElementList_MouseUp;
         elementsGroup.Controls.Add(_elementList);
 
         GroupBox textGroup = new()
@@ -598,17 +645,12 @@ public partial class Form1 : Form, IMainView, ISelectionView
                 }
             }
 
-            _elementList.SelectedIndex = -1;
-            if (selection.Count == 1)
+            for (int index = 0; index < _elementList.Items.Count; index++)
             {
-                for (int index = 0; index < _elementList.Items.Count; index++)
+                if (_elementList.Items[index] is ElementListItem item
+                    && selection.Contains(item.Element))
                 {
-                    if (_elementList.Items[index] is ElementListItem item
-                        && ReferenceEquals(item.Element, selection[0]))
-                    {
-                        _elementList.SelectedIndex = index;
-                        break;
-                    }
+                    _elementList.SetSelected(index, true);
                 }
             }
         }
@@ -776,14 +818,53 @@ public partial class Form1 : Form, IMainView, ISelectionView
             return;
         }
 
-        if (_elementList.SelectedItem is ElementListItem item)
+        _selectionPresenter.SetSelection(_elementList.SelectedItems
+            .OfType<ElementListItem>()
+            .Select(item => item.Element));
+    }
+
+    private void ElementList_MouseDown(object? sender, MouseEventArgs e)
+    {
+        if (e.Button != MouseButtons.Right)
         {
-            _selectionPresenter.SetSelection([item.Element]);
+            return;
         }
-        else
+
+        int index = _elementList.IndexFromPoint(e.Location);
+        if (index < 0)
         {
-            _selectionPresenter.SetSelection([]);
+            _elementList.ClearSelected();
         }
+        else if (!_elementList.GetSelected(index))
+        {
+            _elementList.SetSelected(index, true);
+        }
+    }
+
+    private void ElementList_MouseUp(object? sender, MouseEventArgs e)
+    {
+        if (e.Button != MouseButtons.Right)
+        {
+            return;
+        }
+
+        ContextMenuStrip menu = new();
+        menu.Items.AddRange(
+        [
+            CreateSelectionContextItem(_copyElementMenuItem),
+            CreateSelectionContextItem(_cutElementMenuItem),
+            CreateSelectionContextItem(_pasteElementMenuItem),
+            new ToolStripSeparator(),
+            CreateSelectionContextItem(_duplicateElementMenuItem),
+            CreateSelectionContextItem(_deleteElementMenuItem),
+            new ToolStripSeparator(),
+            CreateSelectionContextItem(_bringToFrontMenuItem),
+            CreateSelectionContextItem(_moveForwardMenuItem),
+            CreateSelectionContextItem(_moveBackwardMenuItem),
+            CreateSelectionContextItem(_sendToBackMenuItem)
+        ]);
+        menu.Closed += (_, _) => menu.Dispose();
+        menu.Show(_elementList, e.Location);
     }
 
     private void FontFamilyEditor_Changed(object? sender, EventArgs e)
@@ -894,6 +975,15 @@ public partial class Form1 : Form, IMainView, ISelectionView
 
     private void Form1_KeyDown(object? sender, KeyEventArgs e)
     {
+        if (e.KeyCode == Keys.Delete && _elementList.Focused
+            && _selectionPresenter?.Selection.Count > 0)
+        {
+            _selectionPresenter.Delete();
+            e.SuppressKeyPress = true;
+            e.Handled = true;
+            return;
+        }
+
         if (e.KeyCode == Keys.F5)
         {
             StartSlideshowButton_Click(sender, EventArgs.Empty);
@@ -979,6 +1069,25 @@ public partial class Form1 : Form, IMainView, ISelectionView
         ToolStripButton button = new(text);
         button.Click += handler;
         return button;
+    }
+
+    private static void ConfigureSelectionMenuItem(
+        ToolStripMenuItem menuItem,
+        Keys shortcut,
+        Action action)
+    {
+        if (shortcut != Keys.None)
+        {
+            menuItem.ShortcutKeys = shortcut;
+        }
+        menuItem.Click += (_, _) => action();
+    }
+
+    private static ToolStripMenuItem CreateSelectionContextItem(ToolStripMenuItem source)
+    {
+        ToolStripMenuItem item = new(source.Text) { Enabled = source.Enabled };
+        item.Click += (_, _) => source.PerformClick();
+        return item;
     }
 
     private sealed record SlideListItem(Slide Slide, int Number)
