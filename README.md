@@ -2,7 +2,7 @@
 
 Projet de cours réalisé en **équipe de 5** : une application de présentation « type PowerPoint », écrite en C# avec une interface WinForms.
 
-**État actuel : M1, M2 et M3 sont fusionnés dans `main`; M4 est en cours.** Le modèle, la validation et l'historique du Core sont couverts par 215 tests; les Presenters par 12 tests; et le stockage `.slds` par 12 tests. Les médias sont embarqués dans `media/` et validés avant décodage (format, taille et dimensions). La fenêtre M4 est reliée aux Presenters : documents, diapositives, menu contextuel, état du document et propriétés du texte et des formes via la liste des éléments. La sélection multiple, le copier/couper/coller, la duplication, la suppression et l'ordre de superposition sont accessibles par le menu Édition et le menu contextuel. Les propriétés, dont l'alignement et l'épaisseur du contour, se synchronisent avec l'historique annuler/rétablir. Les miniatures graphiques et le rendu sur le canevas dépendent du `SlideRenderer` prévu en M5.
+**État actuel : M1, M2 et M3 sont fusionnés dans `main`; M4 est en cours.** Le modèle, la validation et l'historique du Core sont couverts par 215 tests; les Presenters par 12 tests; et le stockage `.slds` par 12 tests. Les médias sont embarqués dans `media/` et validés avant décodage (format, taille et dimensions). La fenêtre M4 est reliée aux Presenters : documents, diapositives, menu contextuel, état du document et propriétés du texte et des formes via la liste des éléments. L'interface adopte un thème sombre bleu-nuit à accents orange, des panneaux arrondis et des boutons animés au survol et au clic. L'écran d'accueil propose la création ou l'ouverture d'une présentation, avec une transition de chargement animée et des illustrations en perspective. La sélection multiple, le copier/couper/coller, la duplication, la suppression et l'ordre de superposition sont accessibles par le menu Édition et le menu contextuel. Le panneau applique la mise en forme à toutes les zones de texte sélectionnées, montre les valeurs mixtes pour gras/italique et synchronise les changements avec l'historique. Les miniatures graphiques et le rendu sur le canevas dépendent du `SlideRenderer` prévu en M5.
 
 ## Démarrage rapide
 
@@ -74,7 +74,7 @@ Chaque tâche ci-dessous devient une **Issue GitHub** (une par ligne de liste), 
 - Compléter le projet WinForms existant (`SlideStudio/SlideStudio.UI`, `net10.0-windows`) et `Program.cs` : prise en charge DPI PerMonitorV2, filet d'erreurs non gérées et assemblage des couches. La fenêtre est reliée au `MainPresenter` pour les opérations de document et de diapositives.
 - Fenêtre principale : menus, barre d'outils, raccourcis (Ctrl+N/O/S/Z/Y…), barre d'état, astérisque « modifié » dans le titre.
 - Panneau de diapositives avec glisser-déposer et menu contextuel; les miniatures graphiques et leur validation à 500 diapositives attendent le `SlideRenderer` de M5.
-- Panneau de propriétés pour le titre, le fond, et les éléments sélectionnés (police, taille, alignement, gras, italique, couleurs et épaisseur du contour) avec boîtes de dialogue WinForms; sélection multiple et commandes copier/couper/coller, supprimer et ordre de superposition; les modifications suivent l'historique annuler/rétablir.
+- Panneau de propriétés pour le titre, le fond, et les éléments sélectionnés (police, taille, alignement, gras, italique, couleurs et épaisseur du contour) avec boîtes de dialogue WinForms; la mise en forme s'applique aux sélections homogènes de texte ou de formes, et l'état mixte du gras/italique est indiqué; les modifications suivent l'historique annuler/rétablir.
 - *Livrable :* fenêtre complète branchée aux Presenters. *Dépend de :* interfaces du membre 2, `SlideRenderer` du membre 4 (miniatures).
 
 ### Membre 4 — Zone de dessin et édition (jalon M5)
@@ -90,6 +90,12 @@ Chaque tâche ci-dessous devient une **Issue GitHub** (une par ligne de liste), 
 - Design : palette, thèmes de diapositives, icônes, cohérence visuelle, contraste du texte (≥ 4,5:1) ; accessibilité (utilisable au clavier seul).
 - Qualité : dérouler une liste de scénarios à risque (double-clic sur Enregistrer, fichier verrouillé, fermeture sans enregistrer…) avant chaque grande fusion ; mettre en place la CI (compilation + tests à chaque PR) ; tenir à jour ce README et les schémas d'architecture ; préparer la démonstration finale.
 - *Dépend de :* `SlideRenderer` du membre 4.
+
+### Pistes produit à planifier après les jalons actuels
+Ces idées sont inspirées des références UI/UX partagées. Elles ne font pas partie des livrables M4–M7 et seront à prioriser et spécifier séparément avant implémentation.
+- Éditeur de transitions entre diapositives et d'animations des éléments, avec une timeline et des réglages de durée.
+- Générateur assisté par IA pour proposer une présentation ou du contenu à partir d'un sujet ou d'un prompt; périmètre, fournisseur, confidentialité des données et coûts à définir avant de choisir une intégration.
+- Tableau de bord d'accueil pour retrouver les présentations récentes, en créer une et accéder aux modèles ou actions principales.
 
 ## Ordre de travail
 

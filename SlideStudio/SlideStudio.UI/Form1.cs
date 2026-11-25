@@ -3,24 +3,37 @@ using SlideStudio.Core.Editing;
 using SlideStudio.Core.Model;
 using SlideStudio.Infrastructure;
 using SlideStudio.Presenters;
+using System.Drawing.Drawing2D;
+using System.Runtime.InteropServices;
 
 namespace SlideStudio.UI;
 
 /// <summary>Fenêtre principale de SlideStudio, reliée aux services et au présentateur M3.</summary>
 public partial class Form1 : Form, IMainView, ISelectionView
 {
+    private static readonly Color WindowColor = Color.FromArgb(15, 17, 26);
+    private static readonly Color PanelColor = Color.FromArgb(25, 29, 42);
+    private static readonly Color ElevatedColor = Color.FromArgb(34, 39, 55);
+    private static readonly Color BorderColor = Color.FromArgb(57, 64, 83);
+    private static readonly Color PrimaryTextColor = Color.FromArgb(244, 246, 252);
+    private static readonly Color MutedTextColor = Color.FromArgb(169, 178, 198);
+    private static readonly Color AccentColor = Color.FromArgb(255, 101, 24);
+    private static readonly Color AccentHoverColor = Color.FromArgb(255, 129, 55);
+    private static readonly Color SelectionColor = Color.FromArgb(53, 61, 82);
+    private static readonly ToolStripRenderer DarkToolStripRenderer = new DarkRenderer();
+
     private readonly ListBox _slideList = new();
-    private readonly Panel _slideSurface = new();
+    private readonly RoundedPanel _slideSurface = new();
     private readonly Label _previewMessage = new();
     private readonly Label _slideCount = new();
     private readonly ToolStripStatusLabel _modifiedStatus = new();
     private readonly ToolStripStatusLabel _slidePositionStatus = new();
     private readonly ToolStripStatusLabel _selectionStatus = new();
     private readonly TextBox _titleEditor = new();
-    private readonly Button _backgroundButton = new();
-    private readonly Button _addSlideButton = new();
-    private readonly Button _duplicateSlideButton = new();
-    private readonly Button _deleteSlideButton = new();
+    private readonly AnimatedButton _backgroundButton = new();
+    private readonly AnimatedButton _addSlideButton = new();
+    private readonly AnimatedButton _duplicateSlideButton = new();
+    private readonly AnimatedButton _deleteSlideButton = new();
     private readonly ListBox _elementList = new();
     private readonly ComboBox _fontFamilyEditor = new();
     private readonly ComboBox _textAlignmentEditor = new();
@@ -28,13 +41,19 @@ public partial class Form1 : Form, IMainView, ISelectionView
     private readonly NumericUpDown _shapeStrokeWidthEditor = new();
     private readonly CheckBox _boldEditor = new();
     private readonly CheckBox _italicEditor = new();
-    private readonly Button _textColorButton = new();
-    private readonly Button _shapeFillButton = new();
-    private readonly Button _shapeStrokeButton = new();
+    private readonly AnimatedButton _textColorButton = new();
+    private readonly AnimatedButton _shapeFillButton = new();
+    private readonly AnimatedButton _shapeStrokeButton = new();
     private readonly ToolStripButton _saveButton = new("Enregistrer");
     private readonly ToolStripButton _undoButton = new("Annuler");
     private readonly ToolStripButton _redoButton = new("Rétablir");
     private readonly Panel _topPanel = new();
+    private readonly Panel _documentHeader = new();
+    private readonly BrandMark _brandMark = new();
+    private readonly Label _documentHeaderTitle = new();
+    private readonly Label _documentHeaderSubtitle = new();
+    private readonly WelcomeScreen _welcomeScreen = new();
+    private readonly LoadingScreen _loadingScreen = new();
     private readonly ToolStripMenuItem _saveMenuItem = new("Enregistrer");
     private readonly ToolStripMenuItem _undoMenuItem = new("Annuler");
     private readonly ToolStripMenuItem _redoMenuItem = new("Rétablir");
@@ -57,6 +76,8 @@ public partial class Form1 : Form, IMainView, ISelectionView
     private bool _updatingSelectionView;
     private Slide? _draggedSlide;
     private Point _dragStartPoint;
+    private int _hoveredSlideIndex = -1;
+    private StartupAction? _pendingStartupAction;
 
     /// <summary>Crée la fenêtre et connecte l'interface aux Presenters et au stockage .slds.</summary>
     public Form1()
@@ -68,6 +89,23 @@ public partial class Form1 : Form, IMainView, ISelectionView
         {
             _selectionSlide = slide;
             _selectionPresenter = new SelectionPresenter(this, _presenter.History, slide);
+        }
+    }
+
+    /// <summary>Applique le thème sombre de la barre de titre native lorsque Windows le permet.</summary>
+    protected override void OnHandleCreated(EventArgs e)
+    {
+        base.OnHandleCreated(e);
+        int enabled = 1;
+        int result = NativeMethods.DwmSetWindowAttribute(Handle, 20, ref enabled, sizeof(int));
+        if (result != 0)
+        {
+            result = NativeMethods.DwmSetWindowAttribute(Handle, 19, ref enabled, sizeof(int));
+        }
+        if (result != 0)
+        {
+            System.Diagnostics.Debug.WriteLine(
+                $"Impossible d'appliquer le thème sombre à la barre de titre (HRESULT 0x{result:X8}).");
         }
     }
 
@@ -108,6 +146,7 @@ public partial class Form1 : Form, IMainView, ISelectionView
                 ? Color.White
                 : ToDrawingColor(selectedSlide.Background);
             _backgroundButton.BackColor = _slideSurface.BackColor;
+            _backgroundButton.SetSwatchColor(_slideSurface.BackColor);
             _backgroundButton.Enabled = selectedSlide is not null;
             _previewMessage.ForeColor = ContrastTextColor(_slideSurface.BackColor);
             _slideSurface.Invalidate();
@@ -144,11 +183,14 @@ public partial class Form1 : Form, IMainView, ISelectionView
     public void SetDocumentTitle(string title)
     {
         Text = $"{title} — SlideStudio";
+        string displayTitle = title.EndsWith(" *", StringComparison.Ordinal)
+            ? title[..^2]
+            : title;
+        _documentHeaderTitle.Text = displayTitle;
+        _documentHeaderSubtitle.Text = "Présentation SlideStudio";
         if (!_titleEditor.Focused)
         {
-            _titleEditor.Text = title.EndsWith(" *", StringComparison.Ordinal)
-                ? title[..^2]
-                : title;
+            _titleEditor.Text = displayTitle;
         }
     }
 
@@ -156,6 +198,9 @@ public partial class Form1 : Form, IMainView, ISelectionView
     public void SetModified(bool isModified)
     {
         _modifiedStatus.Text = isModified ? "Modifications non enregistrées" : "Enregistré";
+        _modifiedStatus.ForeColor = isModified ? AccentHoverColor : MutedTextColor;
+        _documentHeaderSubtitle.Text = isModified ? "Modifications non enregistrées" : "Modifications enregistrées";
+        _documentHeaderSubtitle.ForeColor = isModified ? AccentHoverColor : MutedTextColor;
     }
 
     /// <inheritdoc />
@@ -170,9 +215,10 @@ public partial class Form1 : Form, IMainView, ISelectionView
         try
         {
             RefreshElementList(_selectionSlide, selection);
-            SlideElement? selected = selection.Count == 1 ? selection[0] : null;
-            bool isText = selected is TextElement;
-            bool isShape = selected is ShapeElement;
+            TextElement[] selectedText = selection.OfType<TextElement>().ToArray();
+            ShapeElement[] selectedShapes = selection.OfType<ShapeElement>().ToArray();
+            bool isText = selection.Count > 0 && selectedText.Length == selection.Count;
+            bool isShape = selection.Count > 0 && selectedShapes.Length == selection.Count;
             _fontFamilyEditor.Enabled = isText;
             _textAlignmentEditor.Enabled = isText;
             _fontSizeEditor.Enabled = isText;
@@ -183,23 +229,32 @@ public partial class Form1 : Form, IMainView, ISelectionView
             _shapeStrokeButton.Enabled = isShape;
             _shapeStrokeWidthEditor.Enabled = isShape;
 
-            if (selected is TextElement text)
+            if (isText)
             {
+                TextElement text = selectedText[0];
                 if (!_fontFamilyEditor.Items.Contains(text.FontFamily))
                 {
                     _fontFamilyEditor.Items.Add(text.FontFamily);
                 }
-                _fontFamilyEditor.Text = text.FontFamily;
-                _textAlignmentEditor.SelectedItem = new AlignmentOption(text.Alignment, GetAlignmentLabel(text.Alignment));
+                _fontFamilyEditor.Text = selectedText.All(item => item.FontFamily == text.FontFamily)
+                    ? text.FontFamily
+                    : string.Empty;
+                _textAlignmentEditor.SelectedItem = selectedText.All(item => item.Alignment == text.Alignment)
+                    ? new AlignmentOption(text.Alignment, GetAlignmentLabel(text.Alignment))
+                    : null;
                 _fontSizeEditor.Value = (decimal)text.FontSizePoints;
-                _boldEditor.Checked = text.IsBold;
-                _italicEditor.Checked = text.IsItalic;
+                _boldEditor.CheckState = GetCommonCheckState(selectedText.Select(item => item.IsBold));
+                _italicEditor.CheckState = GetCommonCheckState(selectedText.Select(item => item.IsItalic));
                 _textColorButton.BackColor = ToDrawingColor(text.Color);
+                _textColorButton.SetSwatchColor(_textColorButton.BackColor);
             }
-            else if (selected is ShapeElement shape)
+            else if (isShape)
             {
+                ShapeElement shape = selectedShapes[0];
                 _shapeFillButton.BackColor = ToDrawingColor(shape.Fill);
                 _shapeStrokeButton.BackColor = ToDrawingColor(shape.Stroke);
+                _shapeFillButton.SetSwatchColor(_shapeFillButton.BackColor);
+                _shapeStrokeButton.SetSwatchColor(_shapeStrokeButton.BackColor);
                 _shapeStrokeWidthEditor.Value = (decimal)shape.StrokeWidth;
             }
         }
@@ -258,18 +313,58 @@ public partial class Form1 : Form, IMainView, ISelectionView
         CreateWorkspace();
         CreateStatusBar();
         _topPanel.Dock = DockStyle.Top;
-        _topPanel.Height = 54;
+        _topPanel.Height = 108;
         Controls.Add(_topPanel);
         Controls.SetChildIndex(_topPanel, 0);
         Controls.SetChildIndex(_statusStrip, 1);
+        CreateDocumentHeader();
+        _topPanel.Controls.SetChildIndex(_documentHeader, 0);
+        _topPanel.Controls.SetChildIndex(MainMenuStrip!, 1);
+        _topPanel.Controls.SetChildIndex(_toolStrip, 2);
+        ApplyDarkTheme(this);
+        _welcomeScreen.ActionRequested += WelcomeScreen_ActionRequested;
+        _loadingScreen.Completed += LoadingScreen_Completed;
+        Controls.Add(_welcomeScreen);
+        Controls.Add(_loadingScreen);
+        _welcomeScreen.BringToFront();
         KeyDown += Form1_KeyDown;
         FormClosing += Form1_FormClosing;
+    }
+
+    private void WelcomeScreen_ActionRequested(object? sender, StartupAction action)
+    {
+        _pendingStartupAction = action;
+        _loadingScreen.BringToFront();
+        _loadingScreen.Start();
+    }
+
+    private void LoadingScreen_Completed(object? sender, EventArgs e)
+    {
+        bool ready = _pendingStartupAction switch
+        {
+            StartupAction.NewPresentation => _presenter.New(),
+            StartupAction.OpenPresentation => _presenter.Open(),
+            _ => false
+        };
+        _pendingStartupAction = null;
+        if (ready)
+        {
+            _loadingScreen.Hide();
+            _welcomeScreen.Hide();
+            return;
+        }
+
+        _loadingScreen.Hide();
+        _welcomeScreen.BringToFront();
+        _welcomeScreen.Show();
     }
 
     private void CreateMenus()
     {
         MenuStrip menu = new();
         menu.Dock = DockStyle.Top;
+        menu.Height = 30;
+        menu.Padding = new Padding(12, 3, 0, 3);
         ToolStripMenuItem fileMenu = new("Fichier");
         fileMenu.DropDownItems.Add(CreateMenuItem("Nouveau", Keys.Control | Keys.N, (_, _) => _presenter.New()));
         fileMenu.DropDownItems.Add(CreateMenuItem("Ouvrir…", Keys.Control | Keys.O, (_, _) => _presenter.Open()));
@@ -333,10 +428,16 @@ public partial class Form1 : Form, IMainView, ISelectionView
     private void CreateToolbar()
     {
         _toolStrip.Dock = DockStyle.Bottom;
+        _toolStrip.Height = 42;
+        _toolStrip.Padding = new Padding(10, 4, 10, 4);
         _toolStrip.GripStyle = ToolStripGripStyle.Hidden;
         _toolStrip.Items.Add(CreateToolButton("Nouveau", (_, _) => _presenter.New()));
         _toolStrip.Items.Add(CreateToolButton("Ouvrir", (_, _) => _presenter.Open()));
         _saveButton.Click += (_, _) => _presenter.Save();
+        _saveButton.DisplayStyle = ToolStripItemDisplayStyle.Text;
+        _saveButton.BackColor = AccentColor;
+        _saveButton.Margin = new Padding(6, 1, 8, 1);
+        _saveButton.Padding = new Padding(10, 4, 10, 4);
         _toolStrip.Items.Add(_saveButton);
         _toolStrip.Items.Add(new ToolStripSeparator());
         _undoButton.Click += (_, _) => _presenter.Undo();
@@ -345,20 +446,72 @@ public partial class Form1 : Form, IMainView, ISelectionView
         _toolStrip.Items.Add(_redoButton);
         _toolStrip.Items.Add(new ToolStripSeparator());
         _addSlideButton.Text = "Nouvelle diapositive";
-        _addSlideButton.AutoSize = true;
+        _addSlideButton.AutoSize = false;
+        _addSlideButton.Size = new Size(154, 30);
         _addSlideButton.Click += (_, _) => _presenter.AddSlide();
         _toolStrip.Items.Add(new ToolStripControlHost(_addSlideButton));
         _duplicateSlideButton.Text = "Dupliquer";
-        _duplicateSlideButton.AutoSize = true;
+        _duplicateSlideButton.AutoSize = false;
+        _duplicateSlideButton.Size = new Size(100, 30);
         _duplicateSlideButton.Click += (_, _) => _presenter.DuplicateSelectedSlide();
         _toolStrip.Items.Add(new ToolStripControlHost(_duplicateSlideButton));
         _deleteSlideButton.Text = "Supprimer";
-        _deleteSlideButton.AutoSize = true;
+        _deleteSlideButton.AutoSize = false;
+        _deleteSlideButton.Size = new Size(96, 30);
         _deleteSlideButton.Click += (_, _) => _presenter.DeleteSelectedSlide();
         _toolStrip.Items.Add(new ToolStripControlHost(_deleteSlideButton));
         _toolStrip.Items.Add(new ToolStripSeparator());
         _toolStrip.Items.Add(CreateToolButton("Diaporama images", StartSlideshowButton_Click));
         _topPanel.Controls.Add(_toolStrip);
+    }
+
+    private void CreateDocumentHeader()
+    {
+        _documentHeader.Dock = DockStyle.Top;
+        _documentHeader.Height = 36;
+        _documentHeader.Padding = new Padding(12, 3, 12, 2);
+        _documentHeader.Paint += (_, e) =>
+        {
+            using Pen divider = new(BorderColor);
+            e.Graphics.DrawLine(divider, 0, _documentHeader.Height - 1, _documentHeader.Width, _documentHeader.Height - 1);
+        };
+
+        FlowLayoutPanel contents = new()
+        {
+            Dock = DockStyle.Fill,
+            FlowDirection = FlowDirection.LeftToRight,
+            WrapContents = false,
+            BackColor = PanelColor,
+            Margin = Padding.Empty
+        };
+        _brandMark.Size = new Size(26, 26);
+        _brandMark.Margin = new Padding(0, 0, 8, 0);
+        _documentHeaderTitle.AutoSize = false;
+        _documentHeaderTitle.Size = new Size(360, 26);
+        _documentHeaderTitle.AutoEllipsis = true;
+        _documentHeaderTitle.Text = "Présentation sans titre";
+        _documentHeaderTitle.Font = new Font("Segoe UI Semibold", 10, FontStyle.Bold);
+        _documentHeaderTitle.ForeColor = PrimaryTextColor;
+        _documentHeaderTitle.Margin = new Padding(0, 4, 8, 0);
+        Label separator = new()
+        {
+            Text = "/",
+            AutoSize = true,
+            ForeColor = BorderColor,
+            Margin = new Padding(0, 4, 8, 0)
+        };
+        _documentHeaderSubtitle.AutoSize = true;
+        _documentHeaderSubtitle.Text = "Présentation SlideStudio";
+        _documentHeaderSubtitle.ForeColor = MutedTextColor;
+        _documentHeaderSubtitle.Font = new Font("Segoe UI", 9, FontStyle.Regular);
+        _documentHeaderSubtitle.Margin = new Padding(0, 5, 0, 0);
+
+        contents.Controls.Add(_brandMark);
+        contents.Controls.Add(_documentHeaderTitle);
+        contents.Controls.Add(separator);
+        contents.Controls.Add(_documentHeaderSubtitle);
+        _documentHeader.Controls.Add(contents);
+        _topPanel.Controls.Add(_documentHeader);
     }
 
     private void CreateWorkspace()
@@ -379,6 +532,8 @@ public partial class Form1 : Form, IMainView, ISelectionView
         _slideList.IntegralHeight = false;
         _slideList.DrawItem += SlideList_DrawItem;
         _slideList.SelectedIndexChanged += SlideList_SelectedIndexChanged;
+        _slideList.MouseMove += SlideList_Hover;
+        _slideList.MouseLeave += SlideList_HoverEnd;
         _slideList.MouseDown += SlideList_MouseDown;
         _slideList.MouseMove += SlideList_MouseMove;
         _slideList.MouseUp += SlideList_MouseUp;
@@ -400,12 +555,12 @@ public partial class Form1 : Form, IMainView, ISelectionView
         Panel previewHost = new()
         {
             Dock = DockStyle.Fill,
-            BackColor = Color.FromArgb(238, 240, 243),
+            BackColor = WindowColor,
             Padding = new Padding(36)
         };
         _slideSurface.Dock = DockStyle.Fill;
         _slideSurface.BackColor = Color.White;
-        _slideSurface.BorderStyle = BorderStyle.FixedSingle;
+        _slideSurface.SetStyle(12, BorderColor, 1);
         _previewMessage.Dock = DockStyle.Fill;
         _previewMessage.TextAlign = ContentAlignment.MiddleCenter;
         _previewMessage.Font = new Font("Segoe UI", 13, FontStyle.Regular);
@@ -431,6 +586,152 @@ public partial class Form1 : Form, IMainView, ISelectionView
         _statusStrip.Items.Add(new ToolStripStatusLabel("|"));
         _statusStrip.Items.Add(new ToolStripStatusLabel("Glisser-déposer les diapositives pour les réordonner"));
         Controls.Add(_statusStrip);
+    }
+
+    private void ApplyDarkTheme(Control control)
+    {
+        control.BackColor = WindowColor;
+        control.ForeColor = PrimaryTextColor;
+
+        switch (control)
+        {
+            case Form:
+                break;
+            case MenuStrip menu:
+                ApplyToolStripTheme(menu, PanelColor);
+                break;
+            case StatusStrip status:
+                ApplyToolStripTheme(status, WindowColor);
+                break;
+            case ToolStrip toolStrip:
+                ApplyToolStripTheme(toolStrip, PanelColor);
+                break;
+            case SplitContainer split:
+                split.BackColor = BorderColor;
+                split.Panel1.BackColor = PanelColor;
+                split.Panel2.BackColor = WindowColor;
+                break;
+            case RoundedGroupBox group:
+                group.BackColor = PanelColor;
+                group.ForeColor = PrimaryTextColor;
+                group.SetStyle(PanelColor, BorderColor);
+                break;
+            case Panel panel:
+                panel.BackColor = ReferenceEquals(panel, _slideSurface)
+                    ? panel.BackColor
+                    : PanelColor;
+                break;
+            case Label label:
+                label.ForeColor = MutedTextColor;
+                if (label.Text == "Propriétés" || ReferenceEquals(label, _documentHeaderTitle))
+                {
+                    label.ForeColor = PrimaryTextColor;
+                }
+                break;
+            case BrandMark:
+                break;
+            case AnimatedButton button:
+                button.SetPalette(ElevatedColor, SelectionColor, AccentColor, BorderColor, PrimaryTextColor);
+                if (ReferenceEquals(button, _addSlideButton)
+                    || ReferenceEquals(button, _duplicateSlideButton))
+                {
+                    button.SetPalette(AccentColor, AccentHoverColor, Color.FromArgb(224, 75, 12), AccentColor, Color.White);
+                }
+                else if (ReferenceEquals(button, _deleteSlideButton))
+                {
+                    button.SetPalette(
+                        Color.FromArgb(66, 35, 44),
+                        Color.FromArgb(105, 42, 49),
+                        Color.FromArgb(143, 49, 50),
+                        Color.FromArgb(119, 54, 59),
+                        PrimaryTextColor);
+                }
+                break;
+            case Button button:
+                button.FlatStyle = FlatStyle.Flat;
+                button.FlatAppearance.BorderColor = BorderColor;
+                button.FlatAppearance.MouseOverBackColor = SelectionColor;
+                button.BackColor = ElevatedColor;
+                button.ForeColor = PrimaryTextColor;
+                break;
+            case TextBox textBox:
+                textBox.BackColor = ElevatedColor;
+                textBox.ForeColor = PrimaryTextColor;
+                textBox.BorderStyle = BorderStyle.FixedSingle;
+                break;
+            case ComboBox comboBox:
+                comboBox.BackColor = ElevatedColor;
+                comboBox.ForeColor = PrimaryTextColor;
+                break;
+            case NumericUpDown numeric:
+                numeric.BackColor = ElevatedColor;
+                numeric.ForeColor = PrimaryTextColor;
+                break;
+            case CheckBox checkBox:
+                checkBox.BackColor = PanelColor;
+                checkBox.ForeColor = PrimaryTextColor;
+                checkBox.UseVisualStyleBackColor = false;
+                break;
+            case ListBox listBox:
+                listBox.BackColor = PanelColor;
+                listBox.ForeColor = PrimaryTextColor;
+                break;
+            default:
+                control.BackColor = PanelColor;
+                break;
+        }
+
+        if (control is SplitContainer container)
+        {
+            foreach (Control child in container.Panel1.Controls)
+            {
+                ApplyDarkTheme(child);
+            }
+            foreach (Control child in container.Panel2.Controls)
+            {
+                ApplyDarkTheme(child);
+            }
+        }
+        else
+        {
+            foreach (Control child in control.Controls)
+            {
+                ApplyDarkTheme(child);
+            }
+        }
+
+        if (control is ToolStrip toolStripControl)
+        {
+            ApplyToolStripTheme(toolStripControl, toolStripControl is StatusStrip ? WindowColor : PanelColor);
+        }
+    }
+
+    private void ApplyToolStripTheme(ToolStrip strip, Color background)
+    {
+        strip.BackColor = background;
+        strip.ForeColor = PrimaryTextColor;
+        strip.Renderer = DarkToolStripRenderer;
+        strip.GripStyle = ToolStripGripStyle.Hidden;
+        foreach (ToolStripItem item in strip.Items)
+        {
+            item.BackColor = background;
+            item.ForeColor = PrimaryTextColor;
+            if (item is ToolStripDropDownItem dropDownItem)
+            {
+                dropDownItem.DropDown.BackColor = ElevatedColor;
+                dropDownItem.DropDown.ForeColor = PrimaryTextColor;
+                dropDownItem.DropDown.Renderer = DarkToolStripRenderer;
+                foreach (ToolStripItem child in dropDownItem.DropDownItems)
+                {
+                    child.BackColor = ElevatedColor;
+                    child.ForeColor = PrimaryTextColor;
+                }
+            }
+            if (item is ToolStripControlHost host)
+            {
+                ApplyDarkTheme(host.Control);
+            }
+        }
     }
 
     private Panel CreatePropertiesPanel()
@@ -465,7 +766,7 @@ public partial class Form1 : Form, IMainView, ISelectionView
         _slideCount.AutoSize = true;
         _slideCount.Padding = new Padding(0, 10, 0, 0);
 
-        GroupBox elementsGroup = new()
+        RoundedGroupBox elementsGroup = new()
         {
             Text = "Éléments de la diapositive",
             Dock = DockStyle.Top,
@@ -480,7 +781,7 @@ public partial class Form1 : Form, IMainView, ISelectionView
         _elementList.MouseUp += ElementList_MouseUp;
         elementsGroup.Controls.Add(_elementList);
 
-        GroupBox textGroup = new()
+        RoundedGroupBox textGroup = new()
         {
             Text = "Texte sélectionné",
             Dock = DockStyle.Top,
@@ -504,17 +805,19 @@ public partial class Form1 : Form, IMainView, ISelectionView
         _fontSizeEditor.Increment = 1;
         _fontSizeEditor.ValueChanged += FontSizeEditor_ValueChanged;
         _boldEditor.Text = "Gras";
+        _boldEditor.ThreeState = true;
         _italicEditor.Text = "Italique";
+        _italicEditor.ThreeState = true;
         _boldEditor.CheckedChanged += (_, _) =>
         {
-            if (!_updatingSelectionView && _boldEditor.Enabled)
+            if (!_updatingSelectionView && _boldEditor.Enabled && _boldEditor.CheckState != CheckState.Indeterminate)
             {
                 _selectionPresenter?.SetBold(_boldEditor.Checked);
             }
         };
         _italicEditor.CheckedChanged += (_, _) =>
         {
-            if (!_updatingSelectionView && _italicEditor.Enabled)
+            if (!_updatingSelectionView && _italicEditor.Enabled && _italicEditor.CheckState != CheckState.Indeterminate)
             {
                 _selectionPresenter?.SetItalic(_italicEditor.Checked);
             }
@@ -527,16 +830,9 @@ public partial class Form1 : Form, IMainView, ISelectionView
         textGroup.Controls.Add(textLayout);
         _textColorButton.Text = "Couleur du texte…";
         _textColorButton.Dock = DockStyle.Top;
-        _textColorButton.Click += (_, _) => ChooseElementColor(_textColorButton, element =>
-        {
-            if (element is TextElement)
-            {
-                _selectionPresenter?.SetTextColor(ArgbColor.FromRgb(
-                    _textColorButton.BackColor.R, _textColorButton.BackColor.G, _textColorButton.BackColor.B));
-            }
-        });
+        _textColorButton.Click += (_, _) => ChooseElementColor(_textColorButton, textSelection: true);
 
-        GroupBox shapeGroup = new()
+        RoundedGroupBox shapeGroup = new()
         {
             Text = "Forme sélectionnée",
             Dock = DockStyle.Top,
@@ -545,24 +841,10 @@ public partial class Form1 : Form, IMainView, ISelectionView
         };
         _shapeFillButton.Text = "Remplissage…";
         _shapeFillButton.Dock = DockStyle.Top;
-        _shapeFillButton.Click += (_, _) => ChooseElementColor(_shapeFillButton, element =>
-        {
-            if (element is ShapeElement)
-            {
-                _selectionPresenter?.SetShapeFill(ArgbColor.FromRgb(
-                    _shapeFillButton.BackColor.R, _shapeFillButton.BackColor.G, _shapeFillButton.BackColor.B));
-            }
-        });
+        _shapeFillButton.Click += (_, _) => ChooseElementColor(_shapeFillButton, textSelection: false, fill: true);
         _shapeStrokeButton.Text = "Contour…";
         _shapeStrokeButton.Dock = DockStyle.Top;
-        _shapeStrokeButton.Click += (_, _) => ChooseElementColor(_shapeStrokeButton, element =>
-        {
-            if (element is ShapeElement)
-            {
-                _selectionPresenter?.SetShapeStroke(ArgbColor.FromRgb(
-                    _shapeStrokeButton.BackColor.R, _shapeStrokeButton.BackColor.G, _shapeStrokeButton.BackColor.B));
-            }
-        });
+        _shapeStrokeButton.Click += (_, _) => ChooseElementColor(_shapeStrokeButton, textSelection: false, fill: false);
         _shapeStrokeWidthEditor.Minimum = 0;
         _shapeStrokeWidthEditor.Maximum = (decimal)Limits.MaxStrokeWidth;
         _shapeStrokeWidthEditor.DecimalPlaces = 1;
@@ -635,6 +917,16 @@ public partial class Form1 : Form, IMainView, ISelectionView
         _ => throw new ArgumentOutOfRangeException(nameof(alignment))
     };
 
+    private static CheckState GetCommonCheckState(IEnumerable<bool> values)
+    {
+        bool[] selectedValues = values.ToArray();
+        return selectedValues.All(value => value)
+            ? CheckState.Checked
+            : selectedValues.All(value => !value)
+                ? CheckState.Unchecked
+                : CheckState.Indeterminate;
+    }
+
     private void RefreshElementList(Slide? slide, IReadOnlyList<SlideElement> selection)
     {
         bool wasUpdatingSelectionView = _updatingSelectionView;
@@ -677,17 +969,19 @@ public partial class Form1 : Form, IMainView, ISelectionView
 
     private void SlideList_DrawItem(object? sender, DrawItemEventArgs e)
     {
-        e.DrawBackground();
+        bool isSelected = _slideList.SelectedIndex == e.Index;
+        bool isHovered = _hoveredSlideIndex == e.Index;
+        Rectangle row = Rectangle.Inflate(e.Bounds, -5, -2);
+        using SolidBrush rowBrush = new(isSelected ? SelectionColor : isHovered ? ElevatedColor : PanelColor);
+        DrawRoundedRectangle(e.Graphics, rowBrush, row, 10);
         if (e.Index >= 0 && _slideList.Items[e.Index] is SlideListItem item)
         {
             Rectangle thumbnail = new(e.Bounds.Left + 12, e.Bounds.Top + 8, e.Bounds.Width - 24, 70);
-            using SolidBrush whiteBrush = new(Color.White);
-            using Pen borderPen = new(_slideList.SelectedIndex == e.Index
-                ? Color.FromArgb(38, 118, 211)
-                : Color.FromArgb(195, 199, 205), 2);
-            e.Graphics.FillRectangle(whiteBrush, thumbnail);
-            e.Graphics.DrawRectangle(borderPen, thumbnail);
-            using SolidBrush labelBrush = new(ForeColor);
+            using SolidBrush slideBrush = new(ToDrawingColor(item.Slide.Background));
+            using Pen borderPen = new(isSelected || isHovered ? AccentColor : BorderColor, isSelected ? 2.5f : 1);
+            DrawRoundedRectangle(e.Graphics, slideBrush, thumbnail, 7);
+            DrawRoundedRectangle(e.Graphics, borderPen, thumbnail, 7);
+            using SolidBrush labelBrush = new(PrimaryTextColor);
             e.Graphics.DrawString(
                 $"Diapositive {item.Number}   ·   {item.Slide.Elements.Count} élément(s)",
                 Font,
@@ -696,7 +990,40 @@ public partial class Form1 : Form, IMainView, ISelectionView
                 e.Bounds.Top + 81);
         }
 
-        e.DrawFocusRectangle();
+        if (isSelected)
+        {
+            Rectangle marker = new(e.Bounds.Left + 2, e.Bounds.Top + 14, 3, 54);
+            using SolidBrush markerBrush = new(AccentColor);
+            DrawRoundedRectangle(e.Graphics, markerBrush, marker, 2);
+        }
+    }
+
+    private void SlideList_Hover(object? sender, MouseEventArgs e)
+    {
+        int index = _slideList.IndexFromPoint(e.Location);
+        if (_hoveredSlideIndex != index)
+        {
+            int previousIndex = _hoveredSlideIndex;
+            _hoveredSlideIndex = index;
+            if (previousIndex >= 0)
+            {
+                _slideList.Invalidate(_slideList.GetItemRectangle(previousIndex));
+            }
+            if (index >= 0)
+            {
+                _slideList.Invalidate(_slideList.GetItemRectangle(index));
+            }
+        }
+    }
+
+    private void SlideList_HoverEnd(object? sender, EventArgs e)
+    {
+        if (_hoveredSlideIndex >= 0)
+        {
+            int previousIndex = _hoveredSlideIndex;
+            _hoveredSlideIndex = -1;
+            _slideList.Invalidate(_slideList.GetItemRectangle(previousIndex));
+        }
     }
 
     private void SlideList_MouseDown(object? sender, MouseEventArgs e)
@@ -720,6 +1047,9 @@ public partial class Form1 : Form, IMainView, ISelectionView
         }
 
         ContextMenuStrip menu = new();
+        menu.Renderer = DarkToolStripRenderer;
+        menu.BackColor = ElevatedColor;
+        menu.ForeColor = PrimaryTextColor;
         ToolStripMenuItem duplicate = new("Dupliquer");
         duplicate.Click += (_, _) => _presenter.DuplicateSelectedSlide();
         ToolStripMenuItem delete = new("Supprimer");
@@ -855,6 +1185,9 @@ public partial class Form1 : Form, IMainView, ISelectionView
         }
 
         ContextMenuStrip menu = new();
+        menu.Renderer = DarkToolStripRenderer;
+        menu.BackColor = ElevatedColor;
+        menu.ForeColor = PrimaryTextColor;
         menu.Items.AddRange(
         [
             CreateSelectionContextItem(_copyElementMenuItem),
@@ -910,9 +1243,12 @@ public partial class Form1 : Form, IMainView, ISelectionView
         }
     }
 
-    private void ChooseElementColor(Button colorButton, Action<SlideElement> applyColor)
+    private void ChooseElementColor(AnimatedButton colorButton, bool textSelection, bool? fill = null)
     {
-        if (_selectionPresenter?.Selection is not [SlideElement selected])
+        IReadOnlyList<SlideElement>? selection = _selectionPresenter?.Selection;
+        if (selection is not { Count: > 0 }
+            || (textSelection && selection.Any(element => element is not TextElement))
+            || (!textSelection && selection.Any(element => element is not ShapeElement)))
         {
             return;
         }
@@ -928,14 +1264,21 @@ public partial class Form1 : Form, IMainView, ISelectionView
         }
 
         colorButton.BackColor = dialog.Color;
-        try
+        ArgbColor color = ArgbColor.FromRgb(dialog.Color.R, dialog.Color.G, dialog.Color.B);
+        if (textSelection)
         {
-            applyColor(selected);
+            colorButton.SetSwatchColor(dialog.Color);
+            _selectionPresenter?.SetTextColor(color);
         }
-        catch (DocumentValidationException exception)
+        else if (fill == true)
         {
-            ShowUiError(exception.Message);
-            SetSelection(_selectionPresenter.Selection);
+            colorButton.SetSwatchColor(dialog.Color);
+            _selectionPresenter?.SetShapeFill(color);
+        }
+        else
+        {
+            colorButton.SetSwatchColor(dialog.Color);
+            _selectionPresenter?.SetShapeStroke(color);
         }
     }
 
@@ -1059,6 +1402,40 @@ public partial class Form1 : Form, IMainView, ISelectionView
             ? Color.FromArgb(75, 82, 91)
             : Color.White;
 
+    private static void DrawRoundedRectangle(Graphics graphics, Brush brush, Rectangle bounds, int radius)
+    {
+        using GraphicsPath path = CreateRoundedPath(bounds, radius);
+        graphics.FillPath(brush, path);
+    }
+
+    private static void DrawRoundedRectangle(Graphics graphics, Pen pen, Rectangle bounds, int radius)
+    {
+        using GraphicsPath path = CreateRoundedPath(bounds, radius);
+        graphics.DrawPath(pen, path);
+    }
+
+    private static GraphicsPath CreateRoundedPath(Rectangle bounds, int radius)
+    {
+        GraphicsPath path = new();
+        int diameter = Math.Min(radius * 2, Math.Min(bounds.Width, bounds.Height));
+        if (diameter <= 0)
+        {
+            path.AddRectangle(bounds);
+            return path;
+        }
+
+        Rectangle arc = new(bounds.Left, bounds.Top, diameter, diameter);
+        path.AddArc(arc, 180, 90);
+        arc.X = bounds.Right - diameter;
+        path.AddArc(arc, 270, 90);
+        arc.Y = bounds.Bottom - diameter;
+        path.AddArc(arc, 0, 90);
+        arc.X = bounds.Left;
+        path.AddArc(arc, 90, 90);
+        path.CloseFigure();
+        return path;
+    }
+
     private static ToolStripMenuItem CreateMenuItem(string text, Keys shortcut, EventHandler handler)
     {
         ToolStripMenuItem item = new(text);
@@ -1072,7 +1449,12 @@ public partial class Form1 : Form, IMainView, ISelectionView
 
     private static ToolStripButton CreateToolButton(string text, EventHandler handler)
     {
-        ToolStripButton button = new(text);
+        ToolStripButton button = new(text)
+        {
+            DisplayStyle = ToolStripItemDisplayStyle.Text,
+            Margin = new Padding(3, 1, 3, 1),
+            Padding = new Padding(8, 4, 8, 4)
+        };
         button.Click += handler;
         return button;
     }
@@ -1115,6 +1497,379 @@ public partial class Form1 : Form, IMainView, ISelectionView
     }
 
     private sealed record AlignmentOption(TextAlignment Alignment, string Label);
+
+    private sealed class BrandMark : Control
+    {
+        public BrandMark()
+        {
+            SetStyle(
+                ControlStyles.UserPaint
+                    | ControlStyles.AllPaintingInWmPaint
+                    | ControlStyles.OptimizedDoubleBuffer
+                    | ControlStyles.ResizeRedraw,
+                true);
+        }
+
+        protected override void OnPaint(PaintEventArgs e)
+        {
+            e.Graphics.SmoothingMode = SmoothingMode.AntiAlias;
+            Rectangle bounds = Rectangle.Inflate(ClientRectangle, -1, -1);
+            using LinearGradientBrush background = new(bounds, AccentHoverColor, AccentColor, LinearGradientMode.ForwardDiagonal);
+            e.Graphics.FillEllipse(background, bounds);
+            using Pen highlight = new(Color.FromArgb(110, Color.White), 1);
+            e.Graphics.DrawEllipse(highlight, bounds);
+            using Font markFont = new("Segoe UI", 13, FontStyle.Bold);
+            TextRenderer.DrawText(
+                e.Graphics,
+                "S",
+                markFont,
+                bounds,
+                Color.White,
+                TextFormatFlags.HorizontalCenter | TextFormatFlags.VerticalCenter);
+        }
+    }
+
+    private sealed class AnimatedButton : Button
+    {
+        private readonly System.Windows.Forms.Timer _animationTimer = new() { Interval = 15 };
+        private Color _baseColor = ElevatedColor;
+        private Color _hoverColor = SelectionColor;
+        private Color _pressedColor = AccentColor;
+        private Color _borderColor = BorderColor;
+        private Color _textColor = PrimaryTextColor;
+        private Color _swatchColor;
+        private float _visualState;
+        private float _targetState;
+        private bool _showSwatch;
+
+        public AnimatedButton()
+        {
+            FlatStyle = FlatStyle.Flat;
+            FlatAppearance.BorderSize = 0;
+            UseVisualStyleBackColor = false;
+            SetStyle(
+                ControlStyles.UserPaint
+                    | ControlStyles.AllPaintingInWmPaint
+                    | ControlStyles.OptimizedDoubleBuffer
+                    | ControlStyles.ResizeRedraw,
+                true);
+            _animationTimer.Tick += AnimationTimer_Tick;
+        }
+
+        public void SetPalette(Color baseColor, Color hoverColor, Color pressedColor, Color borderColor, Color textColor)
+        {
+            _baseColor = baseColor;
+            _hoverColor = hoverColor;
+            _pressedColor = pressedColor;
+            _borderColor = borderColor;
+            _textColor = textColor;
+            Invalidate();
+        }
+
+        public void SetSwatchColor(Color color)
+        {
+            _swatchColor = color;
+            _showSwatch = true;
+            Invalidate();
+        }
+
+        protected override void OnMouseEnter(EventArgs e)
+        {
+            base.OnMouseEnter(e);
+            AnimateTo(1);
+        }
+
+        protected override void OnMouseLeave(EventArgs e)
+        {
+            base.OnMouseLeave(e);
+            AnimateTo(0);
+        }
+
+        protected override void OnMouseDown(MouseEventArgs e)
+        {
+            base.OnMouseDown(e);
+            if (e.Button == MouseButtons.Left && Enabled)
+            {
+                AnimateTo(2);
+            }
+        }
+
+        protected override void OnMouseUp(MouseEventArgs e)
+        {
+            base.OnMouseUp(e);
+            AnimateTo(ClientRectangle.Contains(PointToClient(Cursor.Position)) ? 1 : 0);
+        }
+
+        protected override void OnEnabledChanged(EventArgs e)
+        {
+            base.OnEnabledChanged(e);
+            Invalidate();
+        }
+
+        protected override void OnPaintBackground(PaintEventArgs e)
+        {
+        }
+
+        protected override void OnPaint(PaintEventArgs e)
+        {
+            e.Graphics.SmoothingMode = SmoothingMode.AntiAlias;
+            Rectangle bounds = Rectangle.Inflate(ClientRectangle, -1, -1);
+            if (bounds.Width < 2 || bounds.Height < 2)
+            {
+                return;
+            }
+
+            Color fill = GetAnimatedColor(_baseColor, _hoverColor, _pressedColor, _visualState);
+            Color border = Enabled ? ColorBlend(_borderColor, _hoverColor, Math.Min(_visualState, 1) * 0.65f) : BorderColor;
+            if (!Enabled)
+            {
+                fill = Color.FromArgb(39, 43, 55);
+            }
+
+            using GraphicsPath path = CreateRoundedPath(bounds, 9);
+            using LinearGradientBrush fillBrush = new(bounds, Lighten(fill, 0.06f), fill, LinearGradientMode.Vertical);
+            e.Graphics.FillPath(fillBrush, path);
+            using Pen borderPen = new(border, Focused ? 1.8f : 1f);
+            e.Graphics.DrawPath(borderPen, path);
+
+            if (Focused)
+            {
+                Rectangle focusBounds = Rectangle.Inflate(bounds, -4, -4);
+                using GraphicsPath focusPath = CreateRoundedPath(focusBounds, 6);
+                using Pen focusPen = new(Color.FromArgb(110, AccentHoverColor), 1f) { DashPattern = [2, 2] };
+                e.Graphics.DrawPath(focusPen, focusPath);
+            }
+
+            Rectangle textBounds = bounds;
+            if (_showSwatch)
+            {
+                Rectangle swatch = new(bounds.Left + 10, bounds.Top + (bounds.Height - 12) / 2, 12, 12);
+                using SolidBrush swatchBrush = new(_swatchColor);
+                e.Graphics.FillEllipse(swatchBrush, swatch);
+                using Pen swatchBorder = new(Color.FromArgb(145, Color.White), 1);
+                e.Graphics.DrawEllipse(swatchBorder, swatch);
+                textBounds = Rectangle.FromLTRB(swatch.Right + 4, bounds.Top, bounds.Right - 5, bounds.Bottom);
+            }
+
+            TextRenderer.DrawText(
+                e.Graphics,
+                Text,
+                Font,
+                textBounds,
+                Enabled ? _textColor : MutedTextColor,
+                TextFormatFlags.HorizontalCenter | TextFormatFlags.VerticalCenter | TextFormatFlags.EndEllipsis);
+        }
+
+        protected override void Dispose(bool disposing)
+        {
+            if (disposing)
+            {
+                _animationTimer.Dispose();
+            }
+            base.Dispose(disposing);
+        }
+
+        private void AnimateTo(float state)
+        {
+            _targetState = state;
+            _animationTimer.Start();
+        }
+
+        private void AnimationTimer_Tick(object? sender, EventArgs e)
+        {
+            float delta = _targetState - _visualState;
+            if (Math.Abs(delta) < 0.06f)
+            {
+                _visualState = _targetState;
+                _animationTimer.Stop();
+            }
+            else
+            {
+                _visualState += delta * 0.35f;
+            }
+            Invalidate();
+        }
+
+        private static Color GetAnimatedColor(Color normal, Color hover, Color pressed, float state) =>
+            state <= 1
+                ? ColorBlend(normal, hover, state)
+                : ColorBlend(hover, pressed, state - 1);
+
+        private static Color Lighten(Color color, float amount) =>
+            Color.FromArgb(
+                color.A,
+                Math.Min(255, (int)(color.R + (255 - color.R) * amount)),
+                Math.Min(255, (int)(color.G + (255 - color.G) * amount)),
+                Math.Min(255, (int)(color.B + (255 - color.B) * amount)));
+
+        private static Color ColorBlend(Color first, Color second, float amount)
+        {
+            amount = Math.Clamp(amount, 0, 1);
+            return Color.FromArgb(
+                (int)(first.A + ((second.A - first.A) * amount)),
+                (int)(first.R + ((second.R - first.R) * amount)),
+                (int)(first.G + ((second.G - first.G) * amount)),
+                (int)(first.B + ((second.B - first.B) * amount)));
+        }
+    }
+
+    private sealed class RoundedPanel : Panel
+    {
+        private int _cornerRadius = 12;
+        private Color _borderColor = Form1.BorderColor;
+        private float _borderThickness = 1;
+
+        public RoundedPanel()
+        {
+            SetStyle(
+                ControlStyles.UserPaint
+                    | ControlStyles.AllPaintingInWmPaint
+                    | ControlStyles.OptimizedDoubleBuffer
+                    | ControlStyles.ResizeRedraw,
+                true);
+        }
+
+        protected override void OnPaintBackground(PaintEventArgs e)
+        {
+            using SolidBrush parentBrush = new(Parent?.BackColor ?? WindowColor);
+            e.Graphics.FillRectangle(parentBrush, ClientRectangle);
+        }
+
+        protected override void OnPaint(PaintEventArgs e)
+        {
+            e.Graphics.SmoothingMode = SmoothingMode.AntiAlias;
+            Rectangle bounds = Rectangle.Inflate(ClientRectangle, -1, -1);
+            using GraphicsPath path = CreateRoundedPath(bounds, _cornerRadius);
+            using SolidBrush brush = new(BackColor);
+            e.Graphics.FillPath(brush, path);
+            if (_borderThickness > 0)
+            {
+                using Pen border = new(_borderColor, _borderThickness);
+                e.Graphics.DrawPath(border, path);
+            }
+        }
+
+        public void SetStyle(int cornerRadius, Color borderColor, float borderThickness)
+        {
+            _cornerRadius = cornerRadius;
+            _borderColor = borderColor;
+            _borderThickness = borderThickness;
+            Invalidate();
+        }
+    }
+
+    private sealed class RoundedGroupBox : GroupBox
+    {
+        private Color _surfaceColor = PanelColor;
+        private Color _borderColor = Form1.BorderColor;
+        private int _cornerRadius = 10;
+
+        public RoundedGroupBox()
+        {
+            SetStyle(
+                ControlStyles.UserPaint
+                    | ControlStyles.AllPaintingInWmPaint
+                    | ControlStyles.OptimizedDoubleBuffer
+                    | ControlStyles.ResizeRedraw,
+                true);
+        }
+
+        protected override void OnPaint(PaintEventArgs e)
+        {
+            e.Graphics.SmoothingMode = SmoothingMode.AntiAlias;
+            Rectangle bounds = Rectangle.Inflate(ClientRectangle, -1, -1);
+            using GraphicsPath path = CreateRoundedPath(bounds, _cornerRadius);
+            using SolidBrush background = new(_surfaceColor);
+            e.Graphics.FillPath(background, path);
+            using Pen border = new(_borderColor, 1);
+            e.Graphics.DrawPath(border, path);
+
+            Size titleSize = TextRenderer.MeasureText(Text, Font);
+            Rectangle titleBackground = new(14, 0, Math.Max(0, titleSize.Width + 10), titleSize.Height);
+            using SolidBrush titleBrush = new(_surfaceColor);
+            e.Graphics.FillRectangle(titleBrush, titleBackground);
+            TextRenderer.DrawText(
+                e.Graphics,
+                Text,
+                Font,
+                new Point(19, 0),
+                PrimaryTextColor,
+                TextFormatFlags.NoPadding | TextFormatFlags.EndEllipsis);
+        }
+
+        public void SetStyle(Color surfaceColor, Color borderColor)
+        {
+            _surfaceColor = surfaceColor;
+            _borderColor = borderColor;
+            Invalidate();
+        }
+    }
+
+    private sealed class DarkRenderer : ToolStripProfessionalRenderer
+    {
+        protected override void OnRenderToolStripBackground(ToolStripRenderEventArgs e)
+        {
+            using SolidBrush brush = new(e.ToolStrip.BackColor);
+            e.Graphics.FillRectangle(brush, e.AffectedBounds);
+        }
+
+        protected override void OnRenderMenuItemBackground(ToolStripItemRenderEventArgs e)
+        {
+            if (!e.Item.Selected && !e.Item.Pressed)
+            {
+                return;
+            }
+
+            using SolidBrush brush = new(e.Item.Pressed ? AccentColor : SelectionColor);
+            Rectangle bounds = Rectangle.Inflate(new Rectangle(Point.Empty, e.Item.Size), -3, -1);
+            DrawRoundedRectangle(e.Graphics, brush, bounds, 6);
+        }
+
+        protected override void OnRenderButtonBackground(ToolStripItemRenderEventArgs e)
+        {
+            Rectangle bounds = Rectangle.Inflate(new Rectangle(Point.Empty, e.Item.Size), -2, -2);
+            if (e.Item is ToolStripButton { Text: "Enregistrer" })
+            {
+                using SolidBrush accentBrush = new(e.Item.Pressed ? Color.FromArgb(224, 75, 12) : AccentColor);
+                DrawRoundedRectangle(e.Graphics, accentBrush, bounds, 7);
+                return;
+            }
+
+            if (!e.Item.Selected && !e.Item.Pressed)
+            {
+                return;
+            }
+
+            using SolidBrush brush = new(e.Item.Pressed ? AccentColor : SelectionColor);
+            DrawRoundedRectangle(e.Graphics, brush, bounds, 6);
+        }
+
+        protected override void OnRenderSeparator(ToolStripSeparatorRenderEventArgs e)
+        {
+            Rectangle bounds = e.Item.ContentRectangle;
+            using Pen pen = new(BorderColor);
+            if (e.Vertical)
+            {
+                int x = bounds.Left + bounds.Width / 2;
+                e.Graphics.DrawLine(pen, x, bounds.Top + 3, x, bounds.Bottom - 3);
+            }
+            else
+            {
+                int y = bounds.Top + bounds.Height / 2;
+                e.Graphics.DrawLine(pen, bounds.Left + 4, y, bounds.Right - 4, y);
+            }
+        }
+    }
+
+    private static class NativeMethods
+    {
+        [DllImport("dwmapi.dll")]
+        internal static extern int DwmSetWindowAttribute(
+            IntPtr window,
+            int attribute,
+            ref int value,
+            int valueSize);
+    }
 
     private sealed class WinFormsDialogService(Form owner) : IDialogService
     {
