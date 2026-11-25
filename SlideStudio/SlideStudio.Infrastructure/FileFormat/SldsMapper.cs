@@ -1,4 +1,5 @@
 ﻿using SlideStudio.Core.Abstractions;
+using SlideStudio.Core.Models;
 using System;
 using System.Collections.Generic;
 using System.Text;
@@ -40,4 +41,19 @@ public static Presentation ToDomain(SldsDocumentDto dto)
         };
 
 
+    }
+
+    private static SlideDto ToSlideDto(Slide slide)
+    {
+        return new SlideDto
+        {
+            Id = slide.Id,
+            Background = new BackgroundDto
+            {
+                Type = slide.Background.Type,
+                Color = slide.Background.Color,
+                ImageId = slide.Background.ImageId
+            },
+            Elements = slide.Elements.Select(ToElementDto).ToList()
+        };
     }
