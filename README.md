@@ -80,7 +80,7 @@ Chaque tâche ci-dessous devient une **Issue GitHub** (une par ligne de liste), 
 
 ### Membre 4 — Zone de dessin et édition (jalon M5)
 - `SlideRenderer` : dessine une diapositive (texte, formes, images) à n'importe quelle échelle. **Implémenté** et partagé par le canevas, les miniatures, le diaporama et l'export PNG.
-- `SlideCanvas` : affichage, zoom et déplacement de la vue, sélection multiple, rotation à la souris, poignées de redimensionnement et déplacement groupé avec une seule étape d'annulation par glisser.
+- `SlideCanvas` : affichage, zoom et déplacement de la vue, sélection multiple, rotation à la souris, poignées de redimensionnement et déplacement groupé avec une seule étape d'annulation par glisser. Ctrl+A, flèches, Maj+flèches, Suppr et Échap complètent la navigation clavier.
 - Édition du texte directement sur la diapositive, insertion d'images et outils de création des formes : implémentés.
 - Affichage fluide (double buffering), sans scintillement.
 - *Livrable :* contrôle `SlideCanvas`. C'est la partie **la plus longue** : les autres membres peuvent l'aider une fois leur zone terminée.

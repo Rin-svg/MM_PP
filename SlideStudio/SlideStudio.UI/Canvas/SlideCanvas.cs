@@ -33,6 +33,7 @@ internal sealed class SlideCanvas : Control
     public event EventHandler<CanvasSelectionChangedEventArgs>? SelectionChanged;
     public event EventHandler<CanvasFramesChangedEventArgs>? FramesChangeRequested;
     public event EventHandler<CanvasTextChangedEventArgs>? TextChangeRequested;
+    public event EventHandler<CanvasDeletionRequestedEventArgs>? DeletionRequested;
     public event EventHandler? ZoomChanged;
 
     public float ZoomFactor => _zoomFactor;
@@ -176,6 +177,71 @@ internal sealed class SlideCanvas : Control
         }
 
         base.OnMouseWheel(e);
+    }
+
+    protected override void OnKeyDown(KeyEventArgs e)
+    {
+        base.OnKeyDown(e);
+        if (_slide is null)
+        {
+            return;
+        }
+
+        if (e.Control && e.KeyCode == Keys.A)
+        {
+            SetSelectedElements(_slide.Elements, notify: true);
+            e.SuppressKeyPress = true;
+            e.Handled = true;
+            return;
+        }
+
+        if (e.KeyCode == Keys.Escape)
+        {
+            CancelDrag();
+            e.SuppressKeyPress = true;
+            e.Handled = true;
+            return;
+        }
+
+        if (e.KeyCode == Keys.Delete && _selectedElements.Count > 0)
+        {
+            DeletionRequested?.Invoke(this,
+                new CanvasDeletionRequestedEventArgs(_selectedElements.ToArray()));
+            e.SuppressKeyPress = true;
+            e.Handled = true;
+            return;
+        }
+
+        float step = (e.Shift ? 10 : 1);
+        float deltaX = e.KeyCode switch
+        {
+            Keys.Left => -step,
+            Keys.Right => step,
+            _ => 0
+        };
+        float deltaY = e.KeyCode switch
+        {
+            Keys.Up => -step,
+            Keys.Down => step,
+            _ => 0
+        };
+        if (deltaX == 0 && deltaY == 0)
+        {
+            return;
+        }
+
+        Guid gestureId = Guid.NewGuid();
+        (SlideElement Element, ElementFrame Frame)[] updates = _selectedElements
+            .Select(element => (element, element.Frame.Moved(deltaX, deltaY)))
+            .Where(update => update.Item1.Frame != update.Item2)
+            .ToArray();
+        if (updates.Length > 0)
+        {
+            FramesChangeRequested?.Invoke(this,
+                new CanvasFramesChangedEventArgs(updates, gestureId));
+            e.SuppressKeyPress = true;
+            e.Handled = true;
+        }
     }
 
     protected override void OnMouseDown(MouseEventArgs e)
@@ -726,4 +792,9 @@ internal sealed class CanvasTextChangedEventArgs(TextElement element, string tex
 {
     public TextElement Element { get; } = element;
     public string Text { get; } = text;
+}
+
+internal sealed class CanvasDeletionRequestedEventArgs(IReadOnlyList<SlideElement> elements) : EventArgs
+{
+    public IReadOnlyList<SlideElement> Elements { get; } = elements;
 }
