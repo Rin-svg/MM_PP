@@ -2,7 +2,7 @@
 
 Projet de cours réalisé en **équipe de 5** : une application de présentation « type PowerPoint », écrite en C# avec une interface WinForms.
 
-**État actuel : M1, M2 et M3 sont fusionnés dans `main`; M4 est en cours.** Le modèle, la validation et l'historique du Core sont couverts par 215 tests; les Presenters par 12 tests; et le stockage `.slds` par 12 tests. Les médias sont embarqués dans `media/` et validés avant décodage (format, taille et dimensions). La fenêtre M4 est reliée aux Presenters : documents, diapositives, menu contextuel, état du document et propriétés du texte et des formes via la liste des éléments. L'interface adopte un thème sombre bleu-nuit à accents orange, des panneaux arrondis et des boutons animés au survol et au clic. L'écran d'accueil propose la création ou l'ouverture d'une présentation, avec une transition de chargement animée et des illustrations en perspective. La sélection multiple, le copier/couper/coller, la duplication, la suppression et l'ordre de superposition sont accessibles par le menu Édition et le menu contextuel. Le panneau applique la mise en forme à toutes les zones de texte sélectionnées, montre les valeurs mixtes pour gras/italique et synchronise les changements avec l'historique. Les miniatures graphiques et le rendu sur le canevas dépendent du `SlideRenderer` prévu en M5.
+**État actuel : M1, M2 et M3 sont fusionnés dans `main`; M4 est en cours et M5 a démarré.** Le modèle, la validation et l'historique du Core sont couverts par 215 tests; les Presenters par 12 tests; le stockage `.slds` par 12 tests et le rendu par 4 tests UI. Les médias sont embarqués dans `media/` et validés avant décodage (format, taille et dimensions). La fenêtre M4 est reliée aux Presenters : documents, diapositives, menu contextuel, état du document et propriétés du texte et des formes via la liste des éléments. L'interface adopte un thème sombre bleu-nuit à accents orange, des panneaux arrondis et des boutons animés au survol et au clic. L'écran d'accueil propose la création ou l'ouverture d'une présentation, avec une transition de chargement animée et des illustrations en perspective. La sélection multiple, le copier/couper/coller, la duplication, la suppression et l'ordre de superposition sont accessibles par le menu Édition et le menu contextuel. Le panneau applique la mise en forme à toutes les zones de texte sélectionnées, montre les valeurs mixtes pour gras/italique et synchronise les changements avec l'historique. Le nouveau `SlideRenderer` dessine texte, formes et images à plusieurs échelles; le `SlideCanvas` affiche le rendu, sélectionne, déplace et redimensionne un élément avec annulation groupée du geste. L'édition directe du texte et l'insertion de formes, zones de texte et images sont disponibles; le zoom, la rotation et la sélection multiple sur le canevas restent à faire dans M5.
 
 ## Démarrage rapide
 
@@ -22,9 +22,10 @@ dotnet build SlideStudio.sln
 dotnet test tests/SlideStudio.Core.Tests
 dotnet test tests/SlideStudio.Presenters.Tests
 dotnet test tests/SlideStudio.Infrastructure.Tests
+dotnet test tests/SlideStudio.UI.Tests
 ```
 
-Les tests Infrastructure sont lancés explicitement : le projet de tests n'est pas exécuté par `dotnet test SlideStudio.sln`.
+Les tests Infrastructure restent hors solution et sont lancés explicitement. Les tests UI ciblent Windows (`net10.0-windows`).
 
 Avant votre premier commit : configurez votre identité git (voir [CONTRIBUTING.md](CONTRIBUTING.md), section 1), sinon vos commits ne seront pas associés à votre profil GitHub.
 
@@ -37,7 +38,7 @@ Les dépendances vont dans un seul sens : **UI → Presenters → Core ← Infra
 | `SlideStudio.Core` | net10.0 | Modèle (`Presentation`, `Slide`, éléments), validation, commandes, historique annuler/rétablir. Aucune dépendance. | **M1 ✔** | Tout le groupe : toute modification passe par une PR relue par **2 personnes** |
 | `SlideStudio.Infrastructure` (`SlideStudio/SlideStudio.Infrastructure`) | net10.0 | Archive `.slds`, sérialisation JSON, écriture atomique avec copie de secours, lecture des présentations. | **M2 ✔** | Membre 1 |
 | `SlideStudio.Presenters` (`src/SlideStudio.Presenters`) | net10.0 | Logique de chaque écran (patron MVP), testable sans fenêtre. | **M3 ✔** | Membre 2 |
-| `SlideStudio.UI` (`SlideStudio/SlideStudio.UI`) | net10.0-windows | Interface WinForms; fenêtre principale connectée aux opérations M3, panneau de propriétés et sélection de la liste des éléments. | M4 (en cours), M5 | Membres 3 et 4 |
+| `SlideStudio.UI` (`SlideStudio/SlideStudio.UI`) | net10.0-windows | Interface WinForms; fenêtre principale connectée aux opérations M3, panneau de propriétés, rendu des diapositives et canevas. | M4 (en cours), M5 (en cours) | Membres 3 et 4 |
 | Diaporama, export, design, qualité | UI + documentation | Mode présentation, export, thèmes, tests d'intégration, CI. | M6, M7 | Membre 5 |
 
 ## L'équipe et la répartition des tâches
@@ -73,14 +74,14 @@ Chaque tâche ci-dessous devient une **Issue GitHub** (une par ligne de liste), 
 ### Membre 3 — Fenêtre principale et panneaux (jalon M4)
 - Compléter le projet WinForms existant (`SlideStudio/SlideStudio.UI`, `net10.0-windows`) et `Program.cs` : prise en charge DPI PerMonitorV2, filet d'erreurs non gérées et assemblage des couches. La fenêtre est reliée au `MainPresenter` pour les opérations de document et de diapositives.
 - Fenêtre principale : menus, barre d'outils, raccourcis (Ctrl+N/O/S/Z/Y…), barre d'état, astérisque « modifié » dans le titre.
-- Panneau de diapositives avec glisser-déposer et menu contextuel; les miniatures graphiques et leur validation à 500 diapositives attendent le `SlideRenderer` de M5.
+- Panneau de diapositives avec glisser-déposer, menu contextuel et miniatures rendues par le `SlideRenderer` de M5; valider les performances à 500 diapositives.
 - Panneau de propriétés pour le titre, le fond, et les éléments sélectionnés (police, taille, alignement, gras, italique, couleurs et épaisseur du contour) avec boîtes de dialogue WinForms; la mise en forme s'applique aux sélections homogènes de texte ou de formes, et l'état mixte du gras/italique est indiqué; les modifications suivent l'historique annuler/rétablir.
 - *Livrable :* fenêtre complète branchée aux Presenters. *Dépend de :* interfaces du membre 2, `SlideRenderer` du membre 4 (miniatures).
 
 ### Membre 4 — Zone de dessin et édition (jalon M5)
-- `SlideRenderer` : dessine une diapositive (texte, formes, images) à n'importe quelle échelle. **À livrer très tôt**, car miniatures, diaporama et export le réutilisent.
-- `SlideCanvas` : affichage, zoom, sélection à la souris, poignées de redimensionnement et de rotation, déplacement. Un glisser de souris = **une seule** étape d'annulation (`gestureId`, déjà prévu dans le `Core`).
-- Édition du texte directement sur la diapositive ; insertion d'images ; outils de création des formes.
+- `SlideRenderer` : dessine une diapositive (texte, formes, images) à n'importe quelle échelle. **Implémenté** et partagé par le canevas et les miniatures; reste à le réutiliser dans le diaporama et l'export.
+- `SlideCanvas` : affichage, sélection à la souris, poignées de redimensionnement et déplacement avec une seule étape d'annulation par glisser. Le zoom, la rotation et la sélection multiple sur le canevas restent à terminer.
+- Édition du texte directement sur la diapositive, insertion d'images et outils de création des formes : implémentés.
 - Affichage fluide (double buffering), sans scintillement.
 - *Livrable :* contrôle `SlideCanvas`. C'est la partie **la plus longue** : les autres membres peuvent l'aider une fois leur zone terminée.
 
@@ -110,7 +111,7 @@ Ces idées sont inspirées des références UI/UX partagées. Elles ne font pas 
    | `SlideRenderer` (dessiner une diapositive à une échelle) | UI | Membre 4 | 3 (miniatures), 5 (diaporama, export) |
 
 3. **M1, M2 et M3 sont intégrés dans `main`.** Le stockage embarque les médias, et `MainPresenter` utilise le contrat de paquet pour ouvrir et enregistrer.
-4. **Poursuivre M4 et démarrer tôt `SlideRenderer` (M5).** Les commandes de fenêtre, de diapositives et de propriétés sont branchées; l'affichage du contenu sur le canevas et les miniatures dessinées restent dépendants du renderer. Le livrer dès que possible : les miniatures de M4 et le diaporama/export en dépendent.
+4. **Poursuivre M4 et M5.** Le renderer partagé et le premier canevas sont en place; terminer l'édition des éléments et valider le coût des miniatures avant de réutiliser le rendu dans le diaporama et l'export.
 5. **Développement en parallèle.** M4 peut avancer sur les menus, raccourcis et panneaux; brancher l'ouverture/enregistrement via M2, et les miniatures après le renderer.
 6. **Intégration.** Le membre 3 assemble les couches ; le membre 5 déroule les scénarios de test ; tout le monde corrige son périmètre.
 7. **Finitions et rendu (M7).** Thèmes, accessibilité, échelle d'affichage, documentation, démonstration.
