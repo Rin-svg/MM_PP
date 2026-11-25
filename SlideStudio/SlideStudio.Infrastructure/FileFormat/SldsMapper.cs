@@ -6,7 +6,8 @@ using System.Text;
 
 namespace SlideStudio.Infrastructure.FileFormat;
 
-// Convertit entre les modèles métier (Core) et les DTOs de sérialisation JSON.
+// Convertit entre les modèles metier (Core) et les DTOs de sérialisation JSON.
+
 
 public static class SldsMapper
 {
@@ -29,6 +30,7 @@ public static class SldsMapper
         };
     }
 }
+
 
 public static Presentation ToDomain(SldsDocumentDto dto)
     {
@@ -55,5 +57,19 @@ public static Presentation ToDomain(SldsDocumentDto dto)
                 ImageId = slide.Background.ImageId
             },
             Elements = slide.Elements.Select(ToElementDto).ToList()
+        };
+    }
+    private static Slide ToSlideDomain(SlideDto dto)
+    {
+        return new Slide
+        {
+            Id = dto.Id,
+            Background = new Background
+            {
+                Type = dto.Background.Type,
+                Color = dto.Background.Color,
+                ImageId = dto.Background.ImageId
+            },
+            Elements = dto.Elements.Select(ToElementDomain).Where(e => e is not null).Cast<SlideElement>().ToList()
         };
     }
