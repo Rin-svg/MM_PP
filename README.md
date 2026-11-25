@@ -2,7 +2,7 @@
 
 Projet de cours réalisé en **équipe de 5** : une application de présentation « type PowerPoint », écrite en C# avec une interface WinForms.
 
-**État actuel : M1, M2 et M3 sont fusionnés dans `main`; M4 est commencé.** Le modèle, la validation et l'historique du Core sont couverts par 215 tests; les Presenters par 12 tests; et le stockage `.slds` par 12 tests. Les médias sont embarqués dans `media/` et validés avant décodage (format, taille et dimensions). La fenêtre M4 est reliée aux Presenters pour les opérations de document et les diapositives; le rendu des objets reste à faire en M5.
+**État actuel : M1, M2 et M3 sont fusionnés dans `main`; M4 est en cours.** Le modèle, la validation et l'historique du Core sont couverts par 215 tests; les Presenters par 12 tests; et le stockage `.slds` par 12 tests. Les médias sont embarqués dans `media/` et validés avant décodage (format, taille et dimensions). La fenêtre M4 est reliée aux Presenters : documents, diapositives, menu contextuel, état du document et propriétés du texte et des formes via la liste des éléments. Les miniatures graphiques et le rendu sur le canevas dépendent du `SlideRenderer` prévu en M5.
 
 ## Démarrage rapide
 
@@ -37,7 +37,7 @@ Les dépendances vont dans un seul sens : **UI → Presenters → Core ← Infra
 | `SlideStudio.Core` | net10.0 | Modèle (`Presentation`, `Slide`, éléments), validation, commandes, historique annuler/rétablir. Aucune dépendance. | **M1 ✔** | Tout le groupe : toute modification passe par une PR relue par **2 personnes** |
 | `SlideStudio.Infrastructure` (`SlideStudio/SlideStudio.Infrastructure`) | net10.0 | Archive `.slds`, sérialisation JSON, écriture atomique avec copie de secours, lecture des présentations. | **M2 ✔** | Membre 1 |
 | `SlideStudio.Presenters` (`src/SlideStudio.Presenters`) | net10.0 | Logique de chaque écran (patron MVP), testable sans fenêtre. | **M3 ✔** | Membre 2 |
-| `SlideStudio.UI` (`SlideStudio/SlideStudio.UI`) | net10.0-windows | Interface WinForms; fenêtre principale connectée aux opérations M3, éditeur visuel à compléter. | M4 (en cours), M5 | Membres 3 et 4 |
+| `SlideStudio.UI` (`SlideStudio/SlideStudio.UI`) | net10.0-windows | Interface WinForms; fenêtre principale connectée aux opérations M3, panneau de propriétés et sélection de la liste des éléments. | M4 (en cours), M5 | Membres 3 et 4 |
 | Diaporama, export, design, qualité | UI + documentation | Mode présentation, export, thèmes, tests d'intégration, CI. | M6, M7 | Membre 5 |
 
 ## L'équipe et la répartition des tâches
@@ -71,10 +71,10 @@ Chaque tâche ci-dessous devient une **Issue GitHub** (une par ligne de liste), 
 - *Livrable :* Presenters + tests. *Fournit à :* membres 3 et 4.
 
 ### Membre 3 — Fenêtre principale et panneaux (jalon M4)
-- Compléter le projet WinForms existant (`SlideStudio/SlideStudio.UI`, `net10.0-windows`) et `Program.cs` : gestion de l'échelle d'affichage (DPI), filets pour les erreurs non gérées, assemblage des couches. La fenêtre actuelle est reliée au `MainPresenter` pour créer, ouvrir, enregistrer, renommer, modifier le fond, ajouter, dupliquer, supprimer et réordonner les diapositives; le rendu et l'édition des objets restent à faire.
-- Fenêtre principale : menus, barre d'outils (ou ruban simplifié), raccourcis (Ctrl+N/O/S/Z/Y…), barre d'état, astérisque « modifié » dans le titre.
-- Panneau de miniatures (liste fluide même avec 500 diapositives, glisser-déposer pour réordonner, menu contextuel).
-- Panneau de propriétés (police, taille, couleurs) et boîtes de dialogue (`WinFormsDialogService`).
+- Compléter le projet WinForms existant (`SlideStudio/SlideStudio.UI`, `net10.0-windows`) et `Program.cs` : prise en charge DPI PerMonitorV2, filet d'erreurs non gérées et assemblage des couches. La fenêtre est reliée au `MainPresenter` pour les opérations de document et de diapositives.
+- Fenêtre principale : menus, barre d'outils, raccourcis (Ctrl+N/O/S/Z/Y…), barre d'état, astérisque « modifié » dans le titre.
+- Panneau de diapositives avec glisser-déposer et menu contextuel; les miniatures graphiques et leur validation à 500 diapositives attendent le `SlideRenderer` de M5.
+- Panneau de propriétés pour le titre, le fond, et les éléments sélectionnés (police, taille, gras, italique, couleurs) avec boîtes de dialogue WinForms.
 - *Livrable :* fenêtre complète branchée aux Presenters. *Dépend de :* interfaces du membre 2, `SlideRenderer` du membre 4 (miniatures).
 
 ### Membre 4 — Zone de dessin et édition (jalon M5)
@@ -104,7 +104,7 @@ Chaque tâche ci-dessous devient une **Issue GitHub** (une par ligne de liste), 
    | `SlideRenderer` (dessiner une diapositive à une échelle) | UI | Membre 4 | 3 (miniatures), 5 (diaporama, export) |
 
 3. **M1, M2 et M3 sont intégrés dans `main`.** Le stockage embarque les médias, et `MainPresenter` utilise le contrat de paquet pour ouvrir et enregistrer.
-4. **Poursuivre M4 et démarrer tôt `SlideRenderer` (M5).** La fenêtre WinForms est reliée aux Presenters et au stockage, mais ne rend pas encore le contenu graphique des diapositives. Livrer le renderer dès que possible : les miniatures de M4 et le diaporama/export en dépendent.
+4. **Poursuivre M4 et démarrer tôt `SlideRenderer` (M5).** Les commandes de fenêtre, de diapositives et de propriétés sont branchées; l'affichage du contenu sur le canevas et les miniatures dessinées restent dépendants du renderer. Le livrer dès que possible : les miniatures de M4 et le diaporama/export en dépendent.
 5. **Développement en parallèle.** M4 peut avancer sur les menus, raccourcis et panneaux; brancher l'ouverture/enregistrement via M2, et les miniatures après le renderer.
 6. **Intégration.** Le membre 3 assemble les couches ; le membre 5 déroule les scénarios de test ; tout le monde corrige son périmètre.
 7. **Finitions et rendu (M7).** Thèmes, accessibilité, échelle d'affichage, documentation, démonstration.
