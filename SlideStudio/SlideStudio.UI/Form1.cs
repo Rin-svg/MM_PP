@@ -1,8 +1,10 @@
 using SlideStudio.Core;
 using SlideStudio.Core.Editing;
+using SlideStudio.Core.Editing.Commands;
 using SlideStudio.Core.Model;
 using SlideStudio.Infrastructure;
 using SlideStudio.Presenters;
+using SlideStudio.UI.Canvas;
 using System.Drawing.Drawing2D;
 using System.Runtime.InteropServices;
 
@@ -24,7 +26,8 @@ public partial class Form1 : Form, IMainView, ISelectionView
 
     private readonly ListBox _slideList = new();
     private readonly RoundedPanel _slideSurface = new();
-    private readonly Label _previewMessage = new();
+    private readonly SlideRenderer _slideRenderer = new();
+    private readonly SlideCanvas _slideCanvas;
     private readonly Label _slideCount = new();
     private readonly ToolStripStatusLabel _modifiedStatus = new();
     private readonly ToolStripStatusLabel _slidePositionStatus = new();
@@ -82,6 +85,7 @@ public partial class Form1 : Form, IMainView, ISelectionView
     /// <summary>Crée la fenêtre et connecte l'interface aux Presenters et au stockage .slds.</summary>
     public Form1()
     {
+        _slideCanvas = new SlideCanvas(_slideRenderer);
         InitializeComponent();
         BuildInterface();
         _presenter = new MainPresenter(this, new WinFormsDialogService(this), new SldsDocumentStorage());
@@ -138,17 +142,14 @@ public partial class Form1 : Form, IMainView, ISelectionView
             _slidePositionStatus.Text = selectedSlide is null
                 ? "Aucune diapositive"
                 : $"Diapositive {_slideList.SelectedIndex + 1} sur {presentation.Slides.Count}";
-            _previewMessage.Text = selectedSlide is null
-                ? "Aucune diapositive sélectionnée"
-                : $"Diapositive {_slideList.SelectedIndex + 1}\n{selectedSlide.Elements.Count} élément(s)\n\n"
-                    + "Le canevas et le rendu des objets arrivent avec le jalon M5.";
-            _slideSurface.BackColor = selectedSlide is null
+            _slideRenderer.SetMediaStore(_presenter?.MediaStore);
+            _slideCanvas.SetSlide(selectedSlide);
+            _slideSurface.BackColor = PanelColor;
+            _backgroundButton.BackColor = selectedSlide is null
                 ? Color.White
                 : ToDrawingColor(selectedSlide.Background);
-            _backgroundButton.BackColor = _slideSurface.BackColor;
-            _backgroundButton.SetSwatchColor(_slideSurface.BackColor);
+            _backgroundButton.SetSwatchColor(_backgroundButton.BackColor);
             _backgroundButton.Enabled = selectedSlide is not null;
-            _previewMessage.ForeColor = ContrastTextColor(_slideSurface.BackColor);
             _slideSurface.Invalidate();
 
             if (_selectionPresenter is not null && selectedSlide is not null)
@@ -206,6 +207,7 @@ public partial class Form1 : Form, IMainView, ISelectionView
     /// <inheritdoc />
     public void SetSelection(IReadOnlyList<SlideElement> selection)
     {
+        _slideCanvas.SetSelection(selection);
         UpdateSelectionView(selection);
     }
 
@@ -324,6 +326,10 @@ public partial class Form1 : Form, IMainView, ISelectionView
         ApplyDarkTheme(this);
         _welcomeScreen.ActionRequested += WelcomeScreen_ActionRequested;
         _loadingScreen.Completed += LoadingScreen_Completed;
+        _slideCanvas.SelectionChanged += SlideCanvas_SelectionChanged;
+        _slideCanvas.FrameChangeRequested += SlideCanvas_FrameChangeRequested;
+        _slideCanvas.TextChangeRequested += SlideCanvas_TextChangeRequested;
+        FormClosed += (_, _) => _slideRenderer.Dispose();
         Controls.Add(_welcomeScreen);
         Controls.Add(_loadingScreen);
         _welcomeScreen.BringToFront();
@@ -357,6 +363,115 @@ public partial class Form1 : Form, IMainView, ISelectionView
         _loadingScreen.Hide();
         _welcomeScreen.BringToFront();
         _welcomeScreen.Show();
+    }
+
+    private void SlideCanvas_SelectionChanged(object? sender, CanvasSelectionChangedEventArgs e)
+    {
+        _selectionPresenter?.SetSelection(e.Selection);
+    }
+
+    private void SlideCanvas_FrameChangeRequested(object? sender, CanvasFrameChangedEventArgs e)
+    {
+        try
+        {
+            _presenter.History.Execute(EditCommands.SetFrame(e.Element, e.Frame, e.GestureId));
+        }
+        catch (DocumentValidationException exception)
+        {
+            ShowUiError(exception.Message);
+            _slideCanvas.CancelDrag();
+        }
+    }
+
+    private void SlideCanvas_TextChangeRequested(object? sender, CanvasTextChangedEventArgs e)
+    {
+        try
+        {
+            _presenter.History.Execute(EditCommands.SetText(e.Element, e.Text));
+        }
+        catch (DocumentValidationException exception)
+        {
+            ShowUiError(exception.Message);
+        }
+    }
+
+    private void InsertCanvasElement(SlideElement element)
+    {
+        if (_presenter.SelectedSlide is not { } slide)
+        {
+            return;
+        }
+
+        try
+        {
+            _presenter.History.Execute(new AddElementCommand(slide, element));
+            _selectionPresenter?.SetSelection([element]);
+            _slideCanvas.Focus();
+        }
+        catch (DocumentValidationException exception)
+        {
+            ShowUiError(exception.Message);
+        }
+    }
+
+    private void InsertImage()
+    {
+        if (_presenter.SelectedSlide is not { } slide)
+        {
+            return;
+        }
+
+        using OpenFileDialog dialog = new()
+        {
+            Title = "Insérer une image",
+            Filter = "Images|*.png;*.jpg;*.jpeg;*.gif;*.bmp",
+            CheckFileExists = true,
+            Multiselect = false
+        };
+        if (dialog.ShowDialog(this) != DialogResult.OK)
+        {
+            return;
+        }
+
+        try
+        {
+            if (slide.Elements.Count >= Limits.MaxElementsPerSlide)
+            {
+                throw new DocumentValidationException("La diapositive contient déjà le nombre maximal d'éléments.");
+            }
+
+            FileInfo file = new(dialog.FileName);
+            if (file.Length is <= 0 or > Limits.MaxMediaBytes)
+            {
+                throw new DocumentValidationException("La taille de l'image doit être comprise entre 1 octet et 20 Mo.");
+            }
+
+            string extension = Path.GetExtension(file.Name);
+            if (!DocumentRules.AllowedImageExtensions.Contains(extension))
+            {
+                throw new DocumentValidationException("Format d'image non pris en charge.");
+            }
+
+            string mediaName = Guid.NewGuid().ToString("N") + extension.ToLowerInvariant();
+            byte[] bytes = File.ReadAllBytes(file.FullName);
+            _presenter.MediaStore.Add(mediaName, bytes);
+            ImageElement image = new(new ElementFrame(320, 180, 640, 360), mediaName);
+            _presenter.History.Execute(new AddElementCommand(slide, image, "Insérer une image"));
+            _selectionPresenter?.SetSelection([image]);
+            _slideCanvas.Focus();
+        }
+        catch (DocumentValidationException exception)
+        {
+            ShowUiError(exception.Message);
+        }
+        catch (IOException exception)
+        {
+            ShowUiError($"Impossible de lire l'image : {exception.Message}");
+        }
+        catch (UnauthorizedAccessException exception)
+        {
+            ShowUiError($"Accès refusé pour l'image : {exception.Message}");
+        }
     }
 
     private void CreateMenus()
@@ -461,6 +576,18 @@ public partial class Form1 : Form, IMainView, ISelectionView
         _deleteSlideButton.Click += (_, _) => _presenter.DeleteSelectedSlide();
         _toolStrip.Items.Add(new ToolStripControlHost(_deleteSlideButton));
         _toolStrip.Items.Add(new ToolStripSeparator());
+        ToolStripDropDownButton insertButton = new("Insérer");
+        insertButton.DropDownItems.Add("Zone de texte", null, (_, _) => InsertCanvasElement(
+            new TextElement(new ElementFrame(340, 280, 600, 140), "Double-cliquez pour modifier")));
+        insertButton.DropDownItems.Add("Rectangle", null, (_, _) => InsertCanvasElement(
+            new ShapeElement(ShapeKind.Rectangle, new ElementFrame(440, 250, 400, 220))));
+        insertButton.DropDownItems.Add("Ellipse", null, (_, _) => InsertCanvasElement(
+            new ShapeElement(ShapeKind.Ellipse, new ElementFrame(440, 250, 400, 220))));
+        insertButton.DropDownItems.Add("Ligne", null, (_, _) => InsertCanvasElement(
+            new ShapeElement(ShapeKind.Line, new ElementFrame(440, 250, 400, 220))));
+        insertButton.DropDownItems.Add("Image…", null, (_, _) => InsertImage());
+        _toolStrip.Items.Add(insertButton);
+        _toolStrip.Items.Add(new ToolStripSeparator());
         _toolStrip.Items.Add(CreateToolButton("Diaporama images", StartSlideshowButton_Click));
         _topPanel.Controls.Add(_toolStrip);
     }
@@ -559,13 +686,9 @@ public partial class Form1 : Form, IMainView, ISelectionView
             Padding = new Padding(36)
         };
         _slideSurface.Dock = DockStyle.Fill;
-        _slideSurface.BackColor = Color.White;
+        _slideSurface.BackColor = PanelColor;
         _slideSurface.SetStyle(12, BorderColor, 1);
-        _previewMessage.Dock = DockStyle.Fill;
-        _previewMessage.TextAlign = ContentAlignment.MiddleCenter;
-        _previewMessage.Font = new Font("Segoe UI", 13, FontStyle.Regular);
-        _previewMessage.ForeColor = Color.FromArgb(90, 98, 110);
-        _slideSurface.Controls.Add(_previewMessage);
+        _slideSurface.Controls.Add(_slideCanvas);
         previewHost.Controls.Add(_slideSurface);
         centerSplit.Panel1.Controls.Add(previewHost);
 
@@ -977,9 +1100,14 @@ public partial class Form1 : Form, IMainView, ISelectionView
         if (e.Index >= 0 && _slideList.Items[e.Index] is SlideListItem item)
         {
             Rectangle thumbnail = new(e.Bounds.Left + 12, e.Bounds.Top + 8, e.Bounds.Width - 24, 70);
-            using SolidBrush slideBrush = new(ToDrawingColor(item.Slide.Background));
             using Pen borderPen = new(isSelected || isHovered ? AccentColor : BorderColor, isSelected ? 2.5f : 1);
-            DrawRoundedRectangle(e.Graphics, slideBrush, thumbnail, 7);
+            GraphicsState thumbnailState = e.Graphics.Save();
+            using (GraphicsPath thumbnailClip = CreateRoundedPath(thumbnail, 7))
+            {
+                e.Graphics.SetClip(thumbnailClip);
+                _slideRenderer.Draw(e.Graphics, item.Slide, thumbnail);
+            }
+            e.Graphics.Restore(thumbnailState);
             DrawRoundedRectangle(e.Graphics, borderPen, thumbnail, 7);
             using SolidBrush labelBrush = new(PrimaryTextColor);
             e.Graphics.DrawString(
@@ -1396,11 +1524,6 @@ public partial class Form1 : Form, IMainView, ISelectionView
         MessageBox.Show(this, message, "SlideStudio", MessageBoxButtons.OK, MessageBoxIcon.Error);
 
     private static Color ToDrawingColor(ArgbColor color) => Color.FromArgb(color.A, color.R, color.G, color.B);
-
-    private static Color ContrastTextColor(Color color) =>
-        (0.299 * color.R) + (0.587 * color.G) + (0.114 * color.B) >= 145
-            ? Color.FromArgb(75, 82, 91)
-            : Color.White;
 
     private static void DrawRoundedRectangle(Graphics graphics, Brush brush, Rectangle bounds, int radius)
     {

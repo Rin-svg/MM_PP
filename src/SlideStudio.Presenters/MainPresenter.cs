@@ -47,6 +47,8 @@ public sealed class MainPresenter
     public UndoHistory History => _history;
     /// <summary>Diapositive active dans l'interface.</summary>
     public Slide? SelectedSlide => _selectedSlide;
+    /// <summary>Médias embarqués du document courant.</summary>
+    public MediaStore MediaStore => _mediaStore;
     /// <summary>Chemin du fichier courant, ou <c>null</c>.</summary>
     public string? FileName => _fileName;
     /// <summary>Indique qu'une opération de fichier est en cours.</summary>
