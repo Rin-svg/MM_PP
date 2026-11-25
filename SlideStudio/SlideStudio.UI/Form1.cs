@@ -125,7 +125,7 @@ public partial class Form1 : Form, IMainView, ISelectionView
                 }
                 else
                 {
-                    _selectionPresenter.SetSelection(_selectionPresenter.Selection.ToArray());
+                    UpdateSelectionView(_selectionPresenter.Selection.ToArray());
                 }
             }
             else
@@ -160,6 +160,11 @@ public partial class Form1 : Form, IMainView, ISelectionView
 
     /// <inheritdoc />
     public void SetSelection(IReadOnlyList<SlideElement> selection)
+    {
+        UpdateSelectionView(selection);
+    }
+
+    private void UpdateSelectionView(IReadOnlyList<SlideElement> selection)
     {
         _updatingSelectionView = true;
         try
@@ -216,10 +221,11 @@ public partial class Form1 : Form, IMainView, ISelectionView
         _sendToBackMenuItem.Enabled = canReorder;
         _moveForwardMenuItem.Enabled = canReorder;
         _moveBackwardMenuItem.Enabled = canReorder;
-        _selectionStatus.Text = _selectionPresenter?.Selection.Count switch
+        int selectedCount = _elementList.SelectedItems.Count;
+        _selectionStatus.Text = selectedCount switch
         {
             1 => "1 élément sélectionné",
-            > 1 => $"{_selectionPresenter.Selection.Count} éléments sélectionnés",
+            > 1 => $"{selectedCount} éléments sélectionnés",
             _ => "Aucun élément sélectionné"
         };
     }
