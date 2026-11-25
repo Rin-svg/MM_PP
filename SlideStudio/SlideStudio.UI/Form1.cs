@@ -620,21 +620,25 @@ public partial class Form1 : Form, IMainView, ISelectionView
         _toolStrip.Items.Add(new ToolStripSeparator());
         ToolStripButton zoomOut = new("−")
         {
-            ToolTipText = "Réduire le zoom du canevas"
+            ToolTipText = "Réduire le zoom du canevas",
+            AccessibleName = "Réduire le zoom du canevas"
         };
         zoomOut.Click += (_, _) => _slideCanvas.ZoomBy(1 / 1.1f);
         _toolStrip.Items.Add(zoomOut);
+        _zoomStatus.AccessibleName = "Niveau de zoom du canevas";
         _zoomStatus.ToolTipText = "Zoom du canevas (Ctrl + molette pour ajuster, bouton du milieu pour déplacer)";
         _toolStrip.Items.Add(_zoomStatus);
         ToolStripButton zoomIn = new("+")
         {
-            ToolTipText = "Agrandir le zoom du canevas"
+            ToolTipText = "Agrandir le zoom du canevas",
+            AccessibleName = "Agrandir le zoom du canevas"
         };
         zoomIn.Click += (_, _) => _slideCanvas.ZoomBy(1.1f);
         _toolStrip.Items.Add(zoomIn);
         ToolStripButton resetZoom = new("Ajuster")
         {
-            ToolTipText = "Ajuster la diapositive à la zone de travail"
+            ToolTipText = "Ajuster la diapositive à la zone de travail",
+            AccessibleName = "Ajuster la diapositive à la zone de travail"
         };
         resetZoom.Click += (_, _) => _slideCanvas.ResetZoom();
         _toolStrip.Items.Add(resetZoom);
@@ -704,6 +708,9 @@ public partial class Form1 : Form, IMainView, ISelectionView
             SplitterDistance = 260
         };
         _slideList.Dock = DockStyle.Fill;
+        _slideList.AccessibleName = "Liste des diapositives";
+        _slideList.AccessibleDescription = "Sélectionnez une diapositive avec les flèches du clavier.";
+        _slideList.AccessibleRole = AccessibleRole.List;
         _slideList.DrawMode = DrawMode.OwnerDrawFixed;
         _slideList.ItemHeight = 102;
         _slideList.BorderStyle = BorderStyle.None;
@@ -927,6 +934,7 @@ public partial class Form1 : Form, IMainView, ISelectionView
         };
         Label titleLabel = CreatePropertyLabel("Nom de la présentation");
         _titleEditor.Dock = DockStyle.Top;
+        _titleEditor.AccessibleName = "Nom de la présentation";
         _titleEditor.MaxLength = Limits.MaxTitleLength;
         _titleEditor.KeyDown += TitleEditor_KeyDown;
         _titleEditor.Leave += TitleEditor_Leave;
@@ -934,9 +942,11 @@ public partial class Form1 : Form, IMainView, ISelectionView
         _backgroundButton.Text = "Choisir une couleur…";
         _backgroundButton.TextAlign = ContentAlignment.MiddleLeft;
         _backgroundButton.Dock = DockStyle.Top;
+        _backgroundButton.AccessibleName = "Choisir le fond de la diapositive";
         _backgroundButton.Height = 36;
         _backgroundButton.Click += BackgroundButton_Click;
         _slideCount.Dock = DockStyle.Top;
+        _slideCount.AccessibleName = "Nombre de diapositives";
         _slideCount.AutoSize = true;
         _slideCount.Padding = new Padding(0, 10, 0, 0);
 
@@ -948,6 +958,9 @@ public partial class Form1 : Form, IMainView, ISelectionView
             Padding = new Padding(8)
         };
         _elementList.Dock = DockStyle.Fill;
+        _elementList.AccessibleName = "Éléments de la diapositive";
+        _elementList.AccessibleDescription = "Sélection multiple possible avec Maj ou Ctrl.";
+        _elementList.AccessibleRole = AccessibleRole.List;
         _elementList.IntegralHeight = false;
         _elementList.SelectionMode = SelectionMode.MultiExtended;
         _elementList.SelectedIndexChanged += ElementList_SelectedIndexChanged;
@@ -964,23 +977,28 @@ public partial class Form1 : Form, IMainView, ISelectionView
         };
         TableLayoutPanel textLayout = CreatePropertyLayout(5);
         _fontFamilyEditor.DropDownStyle = ComboBoxStyle.DropDown;
+        _fontFamilyEditor.AccessibleName = "Police du texte sélectionné";
         _fontFamilyEditor.Items.AddRange(["Segoe UI", "Arial", "Calibri", "Times New Roman", "Verdana"]);
         _fontFamilyEditor.SelectionChangeCommitted += FontFamilyEditor_Changed;
         _fontFamilyEditor.Leave += FontFamilyEditor_Changed;
         _textAlignmentEditor.DropDownStyle = ComboBoxStyle.DropDownList;
+        _textAlignmentEditor.AccessibleName = "Alignement du texte sélectionné";
         _textAlignmentEditor.DisplayMember = nameof(AlignmentOption.Label);
         _textAlignmentEditor.Items.AddRange(Enum.GetValues<TextAlignment>()
             .Select(alignment => new AlignmentOption(alignment, GetAlignmentLabel(alignment)))
             .ToArray());
         _textAlignmentEditor.SelectionChangeCommitted += TextAlignmentEditor_Changed;
         _fontSizeEditor.Minimum = (decimal)Limits.MinFontSizePoints;
+        _fontSizeEditor.AccessibleName = "Taille du texte sélectionné en points";
         _fontSizeEditor.Maximum = (decimal)Limits.MaxFontSizePoints;
         _fontSizeEditor.DecimalPlaces = 1;
         _fontSizeEditor.Increment = 1;
         _fontSizeEditor.ValueChanged += FontSizeEditor_ValueChanged;
         _boldEditor.Text = "Gras";
+        _boldEditor.AccessibleName = "Mettre le texte en gras";
         _boldEditor.ThreeState = true;
         _italicEditor.Text = "Italique";
+        _italicEditor.AccessibleName = "Mettre le texte en italique";
         _italicEditor.ThreeState = true;
         _boldEditor.CheckedChanged += (_, _) =>
         {
@@ -1003,6 +1021,7 @@ public partial class Form1 : Form, IMainView, ISelectionView
         AddPropertyRow(textLayout, 4, string.Empty, _italicEditor);
         textGroup.Controls.Add(textLayout);
         _textColorButton.Text = "Couleur du texte…";
+        _textColorButton.AccessibleName = "Choisir la couleur du texte sélectionné";
         _textColorButton.Dock = DockStyle.Top;
         _textColorButton.Click += (_, _) => ChooseElementColor(_textColorButton, textSelection: true);
 
@@ -1014,12 +1033,15 @@ public partial class Form1 : Form, IMainView, ISelectionView
             Padding = new Padding(8)
         };
         _shapeFillButton.Text = "Remplissage…";
+        _shapeFillButton.AccessibleName = "Choisir le remplissage de la forme sélectionnée";
         _shapeFillButton.Dock = DockStyle.Top;
         _shapeFillButton.Click += (_, _) => ChooseElementColor(_shapeFillButton, textSelection: false, fill: true);
         _shapeStrokeButton.Text = "Contour…";
+        _shapeStrokeButton.AccessibleName = "Choisir le contour de la forme sélectionnée";
         _shapeStrokeButton.Dock = DockStyle.Top;
         _shapeStrokeButton.Click += (_, _) => ChooseElementColor(_shapeStrokeButton, textSelection: false, fill: false);
         _shapeStrokeWidthEditor.Minimum = 0;
+        _shapeStrokeWidthEditor.AccessibleName = "Épaisseur du contour de la forme sélectionnée";
         _shapeStrokeWidthEditor.Maximum = (decimal)Limits.MaxStrokeWidth;
         _shapeStrokeWidthEditor.DecimalPlaces = 1;
         _shapeStrokeWidthEditor.Increment = 0.5m;

@@ -2,7 +2,7 @@
 
 Projet de cours réalisé en **équipe de 5** : une application de présentation « type PowerPoint », écrite en C# avec une interface WinForms.
 
-**État actuel : M1, M2 et M3 sont fusionnés dans `main`; M4 est en cours et M5 avance.** Le modèle, la validation et l'historique du Core sont couverts par 217 tests; les Presenters par 12 tests; le stockage `.slds` par 12 tests et l'UI par 10 tests. Les médias sont embarqués dans `media/` et validés avant décodage (format, taille et dimensions). La fenêtre M4 est reliée aux Presenters : documents, diapositives, menu contextuel, état du document et propriétés du texte et des formes via la liste des éléments. L'interface adopte un thème sombre bleu-nuit à accents orange, des panneaux arrondis et des boutons animés au survol et au clic. L'écran d'accueil propose la création ou l'ouverture d'une présentation, avec une transition de chargement animée et des illustrations en perspective. La sélection multiple, le copier/couper/coller, la duplication, la suppression et l'ordre de superposition sont accessibles par le menu Édition et le menu contextuel. Le panneau applique la mise en forme à toutes les zones de texte sélectionnées, montre les valeurs mixtes pour gras/italique et synchronise les changements avec l'historique. Le `SlideRenderer` dessine texte, formes et images à plusieurs échelles; le `SlideCanvas` affiche le rendu, prend en charge le zoom ancré à la souris, le déplacement de la vue, la sélection multiple, la rotation, le déplacement et le redimensionnement avec annulation groupée du geste. Le diaporama, l'export PNG/PDF et les miniatures partagent le renderer; les miniatures utilisent un cache LRU borné à 24 Mo, adapté aux présentations jusqu'à 500 diapositives.
+**État actuel : M1 à M6 sont fusionnés dans `main`; M7 (design, accessibilité et qualité) est en cours.** Le modèle, la validation et l'historique du Core sont couverts par 217 tests; les Presenters par 12 tests; le stockage `.slds` par 12 tests et l'UI par 10 tests. Les médias sont embarqués dans `media/` et validés avant décodage (format, taille et dimensions). La fenêtre M4 est reliée aux Presenters : documents, diapositives, menu contextuel, état du document et propriétés du texte et des formes via la liste des éléments. L'interface adopte un thème sombre bleu-nuit à accents orange, des panneaux arrondis et des boutons animés au survol et au clic. L'écran d'accueil propose la création ou l'ouverture d'une présentation, avec une transition de chargement animée et des illustrations en perspective. La sélection multiple, le copier/couper/coller, la duplication, la suppression et l'ordre de superposition sont accessibles par le menu Édition et le menu contextuel. Le panneau applique la mise en forme à toutes les zones de texte sélectionnées, montre les valeurs mixtes pour gras/italique et synchronise les changements avec l'historique. Le `SlideRenderer` dessine texte, formes et images à plusieurs échelles; le `SlideCanvas` affiche le rendu, prend en charge le zoom ancré à la souris, le déplacement de la vue, la sélection multiple, la rotation, le déplacement et le redimensionnement avec annulation groupée du geste. Le diaporama, l'export PNG/PDF et les miniatures partagent le renderer; les miniatures utilisent un cache LRU borné à 24 Mo, adapté aux présentations jusqu'à 500 diapositives.
 
 ## Démarrage rapide
 
@@ -38,8 +38,8 @@ Les dépendances vont dans un seul sens : **UI → Presenters → Core ← Infra
 | `SlideStudio.Core` | net10.0 | Modèle (`Presentation`, `Slide`, éléments), validation, commandes, historique annuler/rétablir. Aucune dépendance. | **M1 ✔** | Tout le groupe : toute modification passe par une PR relue par **2 personnes** |
 | `SlideStudio.Infrastructure` (`SlideStudio/SlideStudio.Infrastructure`) | net10.0 | Archive `.slds`, sérialisation JSON, écriture atomique avec copie de secours, lecture des présentations. | **M2 ✔** | Membre 1 |
 | `SlideStudio.Presenters` (`src/SlideStudio.Presenters`) | net10.0 | Logique de chaque écran (patron MVP), testable sans fenêtre. | **M3 ✔** | Membre 2 |
-| `SlideStudio.UI` (`SlideStudio/SlideStudio.UI`) | net10.0-windows | Interface WinForms; fenêtre principale connectée aux opérations M3, panneau de propriétés, rendu des diapositives et canevas. | M4 (en cours), M5 (en cours) | Membres 3 et 4 |
-| Diaporama, export, design, qualité | UI + documentation | Mode présentation, export, thèmes, tests d'intégration, CI. | M6, M7 | Membre 5 |
+| `SlideStudio.UI` (`SlideStudio/SlideStudio.UI`) | net10.0-windows | Interface WinForms; fenêtre principale connectée aux opérations M3, panneau de propriétés, rendu partagé et canevas interactif. | **M4 ✔, M5 ✔** | Membres 3 et 4 |
+| Diaporama, export, design, qualité | UI + documentation | Diaporama, exports PNG/PDF, thème, accessibilité, scénarios de validation et CI. | **M6 ✔**, M7 (en cours) | Membre 5 |
 
 ## L'équipe et la répartition des tâches
 
@@ -111,10 +111,10 @@ Ces idées sont inspirées des références UI/UX partagées. Elles ne font pas 
    | `SlideRenderer` (dessiner une diapositive à une échelle) | UI | Membre 4 | 3 (miniatures), 5 (diaporama, export) |
 
 3. **M1, M2 et M3 sont intégrés dans `main`.** Le stockage embarque les médias, et `MainPresenter` utilise le contrat de paquet pour ouvrir et enregistrer.
-4. **Poursuivre M4 et M5.** Le renderer partagé est relié au canevas, au diaporama et à l'export PNG; valider le coût des miniatures à 500 diapositives.
-5. **Développement en parallèle.** M4 peut avancer sur les menus, raccourcis et panneaux; brancher l'ouverture/enregistrement via M2, et les miniatures après le renderer.
+4. **M4, M5 et M6 sont intégrés dans `main`.** Le renderer partagé sert le canevas, les miniatures, le diaporama et les exports PNG/PDF; le cache des miniatures est validé avec 500 diapositives.
+5. **Finitions M7.** Vérifier l'accessibilité clavier et lecteur d'écran, le contraste des textes, l'échelle d'affichage, les scénarios à risque et la démonstration.
 6. **Intégration.** Le membre 3 assemble les couches ; le membre 5 déroule les scénarios de test ; tout le monde corrige son périmètre.
-7. **Finitions et rendu (M7).** Thèmes, accessibilité, échelle d'affichage, documentation, démonstration.
+7. **Finitions et rendu (M7, en cours).** Thèmes, accessibilité clavier et lecteur d'écran, échelle d'affichage, documentation, scénarios de validation et démonstration.
 
 ## Travailler avec git (résumé)
 
