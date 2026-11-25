@@ -2,7 +2,7 @@
 
 Projet de cours réalisé en **équipe de 5** : une application de présentation « type PowerPoint », écrite en C# avec une interface WinForms.
 
-**État actuel : M1, M2 et M3 sont fusionnés dans `main`; M4 est en cours et M5 avance.** Le modèle, la validation et l'historique du Core sont couverts par 217 tests; les Presenters par 12 tests; le stockage `.slds` par 12 tests et le rendu par 4 tests UI. Les médias sont embarqués dans `media/` et validés avant décodage (format, taille et dimensions). La fenêtre M4 est reliée aux Presenters : documents, diapositives, menu contextuel, état du document et propriétés du texte et des formes via la liste des éléments. L'interface adopte un thème sombre bleu-nuit à accents orange, des panneaux arrondis et des boutons animés au survol et au clic. L'écran d'accueil propose la création ou l'ouverture d'une présentation, avec une transition de chargement animée et des illustrations en perspective. La sélection multiple, le copier/couper/coller, la duplication, la suppression et l'ordre de superposition sont accessibles par le menu Édition et le menu contextuel. Le panneau applique la mise en forme à toutes les zones de texte sélectionnées, montre les valeurs mixtes pour gras/italique et synchronise les changements avec l'historique. Le `SlideRenderer` dessine texte, formes et images à plusieurs échelles; le `SlideCanvas` affiche le rendu, prend en charge le zoom ancré à la souris, le déplacement de la vue, la sélection multiple, la rotation, le déplacement et le redimensionnement avec annulation groupée du geste. Le diaporama de la présentation utilise le même renderer et F5 le lance; l'export et la validation des performances des miniatures à 500 diapositives restent à faire.
+**État actuel : M1, M2 et M3 sont fusionnés dans `main`; M4 est en cours et M5 avance.** Le modèle, la validation et l'historique du Core sont couverts par 217 tests; les Presenters par 12 tests; le stockage `.slds` par 12 tests et l'UI par 7 tests. Les médias sont embarqués dans `media/` et validés avant décodage (format, taille et dimensions). La fenêtre M4 est reliée aux Presenters : documents, diapositives, menu contextuel, état du document et propriétés du texte et des formes via la liste des éléments. L'interface adopte un thème sombre bleu-nuit à accents orange, des panneaux arrondis et des boutons animés au survol et au clic. L'écran d'accueil propose la création ou l'ouverture d'une présentation, avec une transition de chargement animée et des illustrations en perspective. La sélection multiple, le copier/couper/coller, la duplication, la suppression et l'ordre de superposition sont accessibles par le menu Édition et le menu contextuel. Le panneau applique la mise en forme à toutes les zones de texte sélectionnées, montre les valeurs mixtes pour gras/italique et synchronise les changements avec l'historique. Le `SlideRenderer` dessine texte, formes et images à plusieurs échelles; le `SlideCanvas` affiche le rendu, prend en charge le zoom ancré à la souris, le déplacement de la vue, la sélection multiple, la rotation, le déplacement et le redimensionnement avec annulation groupée du geste. Le diaporama de la présentation et l'export PNG réutilisent le renderer; la validation des performances des miniatures à 500 diapositives et l'export PDF restent à faire.
 
 ## Démarrage rapide
 
@@ -79,7 +79,7 @@ Chaque tâche ci-dessous devient une **Issue GitHub** (une par ligne de liste), 
 - *Livrable :* fenêtre complète branchée aux Presenters. *Dépend de :* interfaces du membre 2, `SlideRenderer` du membre 4 (miniatures).
 
 ### Membre 4 — Zone de dessin et édition (jalon M5)
-- `SlideRenderer` : dessine une diapositive (texte, formes, images) à n'importe quelle échelle. **Implémenté** et partagé par le canevas, les miniatures et le diaporama; reste à le réutiliser dans l'export.
+- `SlideRenderer` : dessine une diapositive (texte, formes, images) à n'importe quelle échelle. **Implémenté** et partagé par le canevas, les miniatures, le diaporama et l'export PNG.
 - `SlideCanvas` : affichage, zoom et déplacement de la vue, sélection multiple, rotation à la souris, poignées de redimensionnement et déplacement groupé avec une seule étape d'annulation par glisser.
 - Édition du texte directement sur la diapositive, insertion d'images et outils de création des formes : implémentés.
 - Affichage fluide (double buffering), sans scintillement.
@@ -87,7 +87,7 @@ Chaque tâche ci-dessous devient une **Issue GitHub** (une par ligne de liste), 
 
 ### Membre 5 — Diaporama, design et qualité (jalons M6 et M7, et transversal)
 - Mode diaporama plein écran (flèches, Échap, écran noir), branché à la présentation courante via F5; le lancement depuis des fichiers image reste également disponible.
-- Export des diapositives en images PNG ; export PDF (piste à étudier ensemble).
+- Export des diapositives en images PNG : **implémenté**; export PDF (piste à étudier ensemble).
 - Design : palette, thèmes de diapositives, icônes, cohérence visuelle, contraste du texte (≥ 4,5:1) ; accessibilité (utilisable au clavier seul).
 - Qualité : dérouler une liste de scénarios à risque (double-clic sur Enregistrer, fichier verrouillé, fermeture sans enregistrer…) avant chaque grande fusion ; mettre en place la CI (compilation + tests à chaque PR) ; tenir à jour ce README et les schémas d'architecture ; préparer la démonstration finale.
 - *Dépend de :* `SlideRenderer` du membre 4.
@@ -111,7 +111,7 @@ Ces idées sont inspirées des références UI/UX partagées. Elles ne font pas 
    | `SlideRenderer` (dessiner une diapositive à une échelle) | UI | Membre 4 | 3 (miniatures), 5 (diaporama, export) |
 
 3. **M1, M2 et M3 sont intégrés dans `main`.** Le stockage embarque les médias, et `MainPresenter` utilise le contrat de paquet pour ouvrir et enregistrer.
-4. **Poursuivre M4 et M5.** Le renderer partagé est relié au canevas et au diaporama; valider le coût des miniatures à 500 diapositives et réutiliser le rendu pour l'export.
+4. **Poursuivre M4 et M5.** Le renderer partagé est relié au canevas, au diaporama et à l'export PNG; valider le coût des miniatures à 500 diapositives.
 5. **Développement en parallèle.** M4 peut avancer sur les menus, raccourcis et panneaux; brancher l'ouverture/enregistrement via M2, et les miniatures après le renderer.
 6. **Intégration.** Le membre 3 assemble les couches ; le membre 5 déroule les scénarios de test ; tout le monde corrige son périmètre.
 7. **Finitions et rendu (M7).** Thèmes, accessibilité, échelle d'affichage, documentation, démonstration.
