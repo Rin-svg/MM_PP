@@ -22,6 +22,8 @@ public partial class Form1 : Form, IMainView, ISelectionView
     private static readonly Color MutedTextColor = Color.FromArgb(169, 178, 198);
     private static readonly Color AccentColor = Color.FromArgb(255, 101, 24);
     private static readonly Color AccentHoverColor = Color.FromArgb(255, 129, 55);
+    private static readonly Color AccentPressedColor = Color.FromArgb(255, 145, 75);
+    private static readonly Color AccentTextColor = Color.FromArgb(25, 15, 10);
     private static readonly Color SelectionColor = Color.FromArgb(53, 61, 82);
     private static readonly ToolStripRenderer DarkToolStripRenderer = new DarkRenderer();
 
@@ -581,6 +583,7 @@ public partial class Form1 : Form, IMainView, ISelectionView
         _saveButton.Click += (_, _) => _presenter.Save();
         _saveButton.DisplayStyle = ToolStripItemDisplayStyle.Text;
         _saveButton.BackColor = AccentColor;
+        _saveButton.ForeColor = AccentTextColor;
         _saveButton.Margin = new Padding(6, 1, 8, 1);
         _saveButton.Padding = new Padding(10, 4, 10, 4);
         _toolStrip.Items.Add(_saveButton);
@@ -816,7 +819,7 @@ public partial class Form1 : Form, IMainView, ISelectionView
                 if (ReferenceEquals(button, _addSlideButton)
                     || ReferenceEquals(button, _duplicateSlideButton))
                 {
-                    button.SetPalette(AccentColor, AccentHoverColor, Color.FromArgb(224, 75, 12), AccentColor, Color.White);
+                    button.SetPalette(AccentColor, AccentHoverColor, AccentPressedColor, AccentColor, AccentTextColor);
                 }
                 else if (ReferenceEquals(button, _deleteSlideButton))
                 {
@@ -896,7 +899,7 @@ public partial class Form1 : Form, IMainView, ISelectionView
         foreach (ToolStripItem item in strip.Items)
         {
             item.BackColor = background;
-            item.ForeColor = PrimaryTextColor;
+            item.ForeColor = ReferenceEquals(item, _saveButton) ? AccentTextColor : PrimaryTextColor;
             if (item is ToolStripDropDownItem dropDownItem)
             {
                 dropDownItem.DropDown.BackColor = ElevatedColor;
@@ -2135,7 +2138,7 @@ public partial class Form1 : Form, IMainView, ISelectionView
                 return;
             }
 
-            using SolidBrush brush = new(e.Item.Pressed ? AccentColor : SelectionColor);
+            using SolidBrush brush = new(SelectionColor);
             Rectangle bounds = Rectangle.Inflate(new Rectangle(Point.Empty, e.Item.Size), -3, -1);
             DrawRoundedRectangle(e.Graphics, brush, bounds, 6);
         }
@@ -2145,7 +2148,7 @@ public partial class Form1 : Form, IMainView, ISelectionView
             Rectangle bounds = Rectangle.Inflate(new Rectangle(Point.Empty, e.Item.Size), -2, -2);
             if (e.Item is ToolStripButton { Text: "Enregistrer" })
             {
-                using SolidBrush accentBrush = new(e.Item.Pressed ? Color.FromArgb(224, 75, 12) : AccentColor);
+                using SolidBrush accentBrush = new(e.Item.Pressed ? AccentPressedColor : AccentColor);
                 DrawRoundedRectangle(e.Graphics, accentBrush, bounds, 7);
                 return;
             }
@@ -2155,7 +2158,7 @@ public partial class Form1 : Form, IMainView, ISelectionView
                 return;
             }
 
-            using SolidBrush brush = new(e.Item.Pressed ? AccentColor : SelectionColor);
+            using SolidBrush brush = new(SelectionColor);
             DrawRoundedRectangle(e.Graphics, brush, bounds, 6);
         }
 
