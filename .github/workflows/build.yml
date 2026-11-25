@@ -1,0 +1,26 @@
+name: Build et tests
+
+on:
+  push:
+    branches: [ "main", "feat/**", "fix/**" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+
+      - name: Restaurer
+        run: dotnet restore SlideStudio.sln
+
+      - name: Compiler
+        run: dotnet build SlideStudio.sln --no-restore --configuration Release
+
+      - name: Tests
+        run: dotnet test SlideStudio.sln --no-build --configuration Release

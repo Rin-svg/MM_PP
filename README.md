@@ -71,7 +71,7 @@ Chaque tâche ci-dessous devient une **Issue GitHub** (une par ligne de liste), 
 - *Livrable :* Presenters + tests. *Fournit à :* membres 3 et 4.
 
 ### Membre 3 — Fenêtre principale et panneaux (jalon M4)
-- Compléter le projet WinForms existant (`SlideStudio/SlideStudio.UI`, `net10.0-windows`) et `Program.cs` : gestion de l'échelle d'affichage (DPI), filets pour les erreurs non gérées, assemblage des couches. Actuellement, `Program.cs` lance seulement le formulaire vide `Form1`.
+- Compléter le projet WinForms existant (`SlideStudio/SlideStudio.UI`, `net10.0-windows`) et `Program.cs` : gestion de l'échelle d'affichage (DPI), filets pour les erreurs non gérées, assemblage des couches. `Form1` propose actuellement un lancement de diaporama à partir d'images, mais n'est pas encore relié à l'éditeur de présentation.
 - Fenêtre principale : menus, barre d'outils (ou ruban simplifié), raccourcis (Ctrl+N/O/S/Z/Y…), barre d'état, astérisque « modifié » dans le titre.
 - Panneau de miniatures (liste fluide même avec 500 diapositives, glisser-déposer pour réordonner, menu contextuel).
 - Panneau de propriétés (police, taille, couleurs) et boîtes de dialogue (`WinFormsDialogService`).
@@ -85,7 +85,7 @@ Chaque tâche ci-dessous devient une **Issue GitHub** (une par ligne de liste), 
 - *Livrable :* contrôle `SlideCanvas`. C'est la partie **la plus longue** : les autres membres peuvent l'aider une fois leur zone terminée.
 
 ### Membre 5 — Diaporama, design et qualité (jalons M6 et M7, et transversal)
-- Mode diaporama plein écran (F5, flèches, Échap, écran noir).
+- Mode diaporama plein écran (flèches, Échap, écran noir). Un premier lancement depuis la fenêtre principale accepte des fichiers image; le branchement au document et le raccourci F5 restent à faire.
 - Export des diapositives en images PNG ; export PDF (piste à étudier ensemble).
 - Design : palette, thèmes de diapositives, icônes, cohérence visuelle, contraste du texte (≥ 4,5:1) ; accessibilité (utilisable au clavier seul).
 - Qualité : dérouler une liste de scénarios à risque (double-clic sur Enregistrer, fichier verrouillé, fermeture sans enregistrer…) avant chaque grande fusion ; mettre en place la CI (compilation + tests à chaque PR) ; tenir à jour ce README et les schémas d'architecture ; préparer la démonstration finale.
@@ -104,7 +104,7 @@ Chaque tâche ci-dessous devient une **Issue GitHub** (une par ligne de liste), 
    | `SlideRenderer` (dessiner une diapositive à une échelle) | UI | Membre 4 | 3 (miniatures), 5 (diaporama, export) |
 
 3. **M1, M2 et M3 sont intégrés dans `main`.** Le stockage embarque les médias, et `MainPresenter` utilise le contrat de paquet pour ouvrir et enregistrer.
-4. **Poursuivre M4 et démarrer tôt `SlideRenderer` (M5).** Le projet WinForms existe, mais sa fenêtre principale reste un formulaire vide. Livrer le renderer dès que possible : les miniatures de M4 et le diaporama/export en dépendent.
+4. **Poursuivre M4 et démarrer tôt `SlideRenderer` (M5).** Le projet WinForms existe; sa fenêtre principale n'est pas encore reliée à l'éditeur ou au modèle de présentation. Livrer le renderer dès que possible : les miniatures de M4 et le diaporama/export en dépendent.
 5. **Développement en parallèle.** M4 peut avancer sur les menus, raccourcis et panneaux; brancher l'ouverture/enregistrement via M2, et les miniatures après le renderer.
 6. **Intégration.** Le membre 3 assemble les couches ; le membre 5 déroule les scénarios de test ; tout le monde corrige son périmètre.
 7. **Finitions et rendu (M7).** Thèmes, accessibilité, échelle d'affichage, documentation, démonstration.

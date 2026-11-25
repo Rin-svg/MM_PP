@@ -17,7 +17,9 @@ public static class ImageHelper
         CancellationToken cancellationToken = default)
     {
         if (!File.Exists(imagePath))
+        {
             throw new FileNotFoundException("Image introuvable.", imagePath);
+        }
 
         var bytes = await File.ReadAllBytesAsync(imagePath, cancellationToken)
                               .ConfigureAwait(false);
