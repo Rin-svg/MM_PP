@@ -4,19 +4,17 @@ using System.Text;
 
 namespace SlideStudio.Infrastructure.Persistence;
 
-/// <summary>
-/// Écriture atomique de fichiers + création de copie de secours.
-/// Garantit qu'on n'a jamais un fichier .slds partiellement écrit.
-/// </summary>
+/
+// Écriture atomique de fichiers + création de copie de secours.
+// Garantit qu'on n'a jamais un fichier .slds partiellement écrit.
+
 public sealed class SafeFileWriter
 {
-    /// <summary>
-    /// Écrit le contenu de façon sûre :
-    /// 1. Crée une copie de secours (.bak)
-    /// 2. Écrit dans un fichier temporaire (.tmp)
-    /// 3. Remplace atomiquement le fichier cible
-    /// </summary>
-    public async Task WriteAtomicAsync(
+   // Écrit le contenu de façon sûre :
+   // 1. Crée une copie de secours (.bak)
+   // 2. Écrit dans un fichier temporaire (.tmp)
+   // 3. Remplace atomiquement le fichier cible
+       public async Task WriteAtomicAsync(
         string targetPath,
         string content,
         CancellationToken cancellationToken = default)
@@ -35,3 +33,8 @@ public sealed class SafeFileWriter
         {
             await CreateBackupAsync(targetPath, cancellationToken).ConfigureAwait(false);
         }
+        private async Task CreateBackupAsync(string targetPath, CancellationToken cancellationToken)
+    {
+        throw new NotImplementedException();
+    }
+}
