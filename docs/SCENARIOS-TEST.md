@@ -17,6 +17,7 @@
 ## 4. Interface utilisateur
 - Vérifier les raccourcis clavier.
 - Depuis le canevas, vérifier Ctrl+A, les flèches, Maj+flèches, Suppr et Échap.
+- Parcourir les diapositives, les éléments et les propriétés avec Tab, Maj+Tab et les flèches; vérifier que le lecteur d'écran annonce leur nom et leur fonction.
 - Vérifier les messages d'erreur.
 - Vérifier la fermeture sans enregistrer.
 

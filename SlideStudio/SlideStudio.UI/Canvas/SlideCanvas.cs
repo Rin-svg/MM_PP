@@ -47,6 +47,7 @@ internal sealed class SlideCanvas : Control
         TabStop = true;
         AccessibleRole = AccessibleRole.Graphic;
         AccessibleName = "Canevas de la diapositive";
+        AccessibleDescription = "Ctrl+A sélectionne tous les éléments. Utilisez les flèches pour déplacer la sélection, Maj avec les flèches pour la déplacer par incréments plus grands, Suppr pour supprimer et Échap pour désélectionner.";
         SetStyle(
             ControlStyles.UserPaint
                 | ControlStyles.AllPaintingInWmPaint
