@@ -23,7 +23,9 @@ public partial class Form1 : Form, IMainView, ISelectionView
     private readonly Button _deleteSlideButton = new();
     private readonly ListBox _elementList = new();
     private readonly ComboBox _fontFamilyEditor = new();
+    private readonly ComboBox _textAlignmentEditor = new();
     private readonly NumericUpDown _fontSizeEditor = new();
+    private readonly NumericUpDown _shapeStrokeWidthEditor = new();
     private readonly CheckBox _boldEditor = new();
     private readonly CheckBox _italicEditor = new();
     private readonly Button _textColorButton = new();
@@ -114,7 +116,7 @@ public partial class Form1 : Form, IMainView, ISelectionView
                 }
                 else
                 {
-                    RefreshElementList(selectedSlide, _selectionPresenter.Selection);
+                    _selectionPresenter.SetSelection(_selectionPresenter.Selection);
                 }
             }
             else
@@ -158,12 +160,14 @@ public partial class Form1 : Form, IMainView, ISelectionView
             bool isText = selected is TextElement;
             bool isShape = selected is ShapeElement;
             _fontFamilyEditor.Enabled = isText;
+            _textAlignmentEditor.Enabled = isText;
             _fontSizeEditor.Enabled = isText;
             _boldEditor.Enabled = isText;
             _italicEditor.Enabled = isText;
             _textColorButton.Enabled = isText;
             _shapeFillButton.Enabled = isShape;
             _shapeStrokeButton.Enabled = isShape;
+            _shapeStrokeWidthEditor.Enabled = isShape;
 
             if (selected is TextElement text)
             {
@@ -172,6 +176,7 @@ public partial class Form1 : Form, IMainView, ISelectionView
                     _fontFamilyEditor.Items.Add(text.FontFamily);
                 }
                 _fontFamilyEditor.Text = text.FontFamily;
+                _textAlignmentEditor.SelectedItem = new AlignmentOption(text.Alignment, GetAlignmentLabel(text.Alignment));
                 _fontSizeEditor.Value = (decimal)text.FontSizePoints;
                 _boldEditor.Checked = text.IsBold;
                 _italicEditor.Checked = text.IsItalic;
@@ -181,6 +186,7 @@ public partial class Form1 : Form, IMainView, ISelectionView
             {
                 _shapeFillButton.BackColor = ToDrawingColor(shape.Fill);
                 _shapeStrokeButton.BackColor = ToDrawingColor(shape.Stroke);
+                _shapeStrokeWidthEditor.Value = (decimal)shape.StrokeWidth;
             }
         }
         finally
@@ -425,14 +431,20 @@ public partial class Form1 : Form, IMainView, ISelectionView
         {
             Text = "Texte sélectionné",
             Dock = DockStyle.Top,
-            Height = 174,
+            Height = 214,
             Padding = new Padding(8)
         };
-        TableLayoutPanel textLayout = CreatePropertyLayout(4);
+        TableLayoutPanel textLayout = CreatePropertyLayout(5);
         _fontFamilyEditor.DropDownStyle = ComboBoxStyle.DropDown;
         _fontFamilyEditor.Items.AddRange(["Segoe UI", "Arial", "Calibri", "Times New Roman", "Verdana"]);
         _fontFamilyEditor.SelectionChangeCommitted += FontFamilyEditor_Changed;
         _fontFamilyEditor.Leave += FontFamilyEditor_Changed;
+        _textAlignmentEditor.DropDownStyle = ComboBoxStyle.DropDownList;
+        _textAlignmentEditor.DisplayMember = nameof(AlignmentOption.Label);
+        _textAlignmentEditor.Items.AddRange(Enum.GetValues<TextAlignment>()
+            .Select(alignment => new AlignmentOption(alignment, GetAlignmentLabel(alignment)))
+            .ToArray());
+        _textAlignmentEditor.SelectionChangeCommitted += TextAlignmentEditor_Changed;
         _fontSizeEditor.Minimum = (decimal)Limits.MinFontSizePoints;
         _fontSizeEditor.Maximum = (decimal)Limits.MaxFontSizePoints;
         _fontSizeEditor.DecimalPlaces = 1;
@@ -456,8 +468,9 @@ public partial class Form1 : Form, IMainView, ISelectionView
         };
         AddPropertyRow(textLayout, 0, "Police", _fontFamilyEditor);
         AddPropertyRow(textLayout, 1, "Taille (pt)", _fontSizeEditor);
-        AddPropertyRow(textLayout, 2, string.Empty, _boldEditor);
-        AddPropertyRow(textLayout, 3, string.Empty, _italicEditor);
+        AddPropertyRow(textLayout, 2, "Alignement", _textAlignmentEditor);
+        AddPropertyRow(textLayout, 3, string.Empty, _boldEditor);
+        AddPropertyRow(textLayout, 4, string.Empty, _italicEditor);
         textGroup.Controls.Add(textLayout);
         _textColorButton.Text = "Couleur du texte…";
         _textColorButton.Dock = DockStyle.Top;
@@ -474,7 +487,7 @@ public partial class Form1 : Form, IMainView, ISelectionView
         {
             Text = "Forme sélectionnée",
             Dock = DockStyle.Top,
-            Height = 104,
+            Height = 142,
             Padding = new Padding(8)
         };
         _shapeFillButton.Text = "Remplissage…";
@@ -497,8 +510,22 @@ public partial class Form1 : Form, IMainView, ISelectionView
                     _shapeStrokeButton.BackColor.R, _shapeStrokeButton.BackColor.G, _shapeStrokeButton.BackColor.B));
             }
         });
-        shapeGroup.Controls.Add(_shapeStrokeButton);
-        shapeGroup.Controls.Add(_shapeFillButton);
+        _shapeStrokeWidthEditor.Minimum = 0;
+        _shapeStrokeWidthEditor.Maximum = (decimal)Limits.MaxStrokeWidth;
+        _shapeStrokeWidthEditor.DecimalPlaces = 1;
+        _shapeStrokeWidthEditor.Increment = 0.5m;
+        _shapeStrokeWidthEditor.ValueChanged += (_, _) =>
+        {
+            if (!_updatingSelectionView && _shapeStrokeWidthEditor.Enabled)
+            {
+                _selectionPresenter?.SetShapeStrokeWidth((double)_shapeStrokeWidthEditor.Value);
+            }
+        };
+        TableLayoutPanel shapeLayout = CreatePropertyLayout(3);
+        AddPropertyRow(shapeLayout, 0, string.Empty, _shapeFillButton);
+        AddPropertyRow(shapeLayout, 1, string.Empty, _shapeStrokeButton);
+        AddPropertyRow(shapeLayout, 2, "Épaisseur", _shapeStrokeWidthEditor);
+        shapeGroup.Controls.Add(shapeLayout);
 
         properties.Controls.Add(shapeGroup);
         properties.Controls.Add(_textColorButton);
@@ -546,6 +573,14 @@ public partial class Form1 : Form, IMainView, ISelectionView
         layout.Controls.Add(caption, 0, row);
         layout.Controls.Add(control, 1, row);
     }
+
+    private static string GetAlignmentLabel(TextAlignment alignment) => alignment switch
+    {
+        TextAlignment.Left => "Gauche",
+        TextAlignment.Center => "Centré",
+        TextAlignment.Right => "Droite",
+        _ => throw new ArgumentOutOfRangeException(nameof(alignment))
+    };
 
     private void RefreshElementList(Slide? slide, IReadOnlyList<SlideElement> selection)
     {
@@ -778,6 +813,16 @@ public partial class Form1 : Form, IMainView, ISelectionView
         }
     }
 
+    private void TextAlignmentEditor_Changed(object? sender, EventArgs e)
+    {
+        if (!_updatingSelectionView
+            && _textAlignmentEditor.Enabled
+            && _textAlignmentEditor.SelectedItem is AlignmentOption option)
+        {
+            _selectionPresenter?.SetTextAlignment(option.Alignment);
+        }
+    }
+
     private void ChooseElementColor(Button colorButton, Action<SlideElement> applyColor)
     {
         if (_selectionPresenter?.Selection is not [SlideElement selected])
@@ -953,6 +998,8 @@ public partial class Form1 : Form, IMainView, ISelectionView
         private static string Truncate(string value, int length) =>
             value.Length <= length ? value : value[..(length - 1)] + "…";
     }
+
+    private sealed record AlignmentOption(TextAlignment Alignment, string Label);
 
     private sealed class WinFormsDialogService(Form owner) : IDialogService
     {
