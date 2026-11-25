@@ -16,6 +16,7 @@
 
 ## 4. Interface utilisateur
 - Vérifier les raccourcis clavier.
+- Depuis le canevas, vérifier Ctrl+A, les flèches, Maj+flèches, Suppr et Échap.
 - Vérifier les messages d'erreur.
 - Vérifier la fermeture sans enregistrer.
 

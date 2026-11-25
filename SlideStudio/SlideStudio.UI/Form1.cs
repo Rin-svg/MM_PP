@@ -334,6 +334,7 @@ public partial class Form1 : Form, IMainView, ISelectionView
         _slideCanvas.SelectionChanged += SlideCanvas_SelectionChanged;
         _slideCanvas.FramesChangeRequested += SlideCanvas_FramesChangeRequested;
         _slideCanvas.TextChangeRequested += SlideCanvas_TextChangeRequested;
+        _slideCanvas.DeletionRequested += SlideCanvas_DeletionRequested;
         _slideCanvas.ZoomChanged += (_, _) => _zoomStatus.Text = $"{_slideCanvas.ZoomFactor:P0}";
         FormClosed += (_, _) =>
         {
@@ -403,6 +404,17 @@ public partial class Form1 : Form, IMainView, ISelectionView
         {
             ShowUiError(exception.Message);
         }
+    }
+
+    private void SlideCanvas_DeletionRequested(object? sender, CanvasDeletionRequestedEventArgs e)
+    {
+        if (_selectionPresenter is null)
+        {
+            return;
+        }
+
+        _selectionPresenter.SetSelection(e.Elements);
+        _selectionPresenter.Delete();
     }
 
     private void InsertCanvasElement(SlideElement element)
