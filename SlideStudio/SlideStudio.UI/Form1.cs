@@ -5,6 +5,7 @@ using SlideStudio.Core.Model;
 using SlideStudio.Infrastructure;
 using SlideStudio.Presenters;
 using SlideStudio.UI.Canvas;
+using SlideStudio.UI.Export;
 using System.Drawing.Drawing2D;
 using System.Runtime.InteropServices;
 
@@ -490,6 +491,8 @@ public partial class Form1 : Form, IMainView, ISelectionView
         _saveMenuItem.ShortcutKeys = Keys.Control | Keys.S;
         _saveMenuItem.Click += (_, _) => _presenter.Save();
         fileMenu.DropDownItems.Add(CreateMenuItem("Enregistrer sous…", Keys.Control | Keys.Shift | Keys.S, (_, _) => _presenter.SaveAs()));
+        fileMenu.DropDownItems.Add(new ToolStripSeparator());
+        fileMenu.DropDownItems.Add(CreateMenuItem("Exporter les diapositives en PNG…", Keys.None, ExportSlidesAsPng));
         fileMenu.DropDownItems.Add(new ToolStripSeparator());
         fileMenu.DropDownItems.Add(CreateMenuItem("Quitter", Keys.Alt | Keys.F4, (_, _) => Close()));
 
@@ -1560,9 +1563,64 @@ public partial class Form1 : Form, IMainView, ISelectionView
                 or DocumentValidationException
                 or ExternalException
                 or InvalidOperationException
+                or KeyNotFoundException
                 or OutOfMemoryException)
         {
             ShowUiError($"Impossible de lancer le diaporama : {exception.Message}");
+        }
+    }
+
+    private void ExportSlidesAsPng(object? sender, EventArgs e)
+    {
+        using FolderBrowserDialog dialog = new()
+        {
+            Description = "Choisissez le dossier de destination des diapositives PNG.",
+            ShowNewFolderButton = true
+        };
+        if (dialog.ShowDialog(this) != DialogResult.OK)
+        {
+            return;
+        }
+
+        try
+        {
+            string[] outputPaths = SlidePngExporter.GetOutputPaths(_presenter.Presentation, dialog.SelectedPath);
+            bool overwrite = outputPaths.Any(File.Exists);
+            if (overwrite
+                && MessageBox.Show(
+                    this,
+                    $"Un ou plusieurs fichiers PNG existent déjà. Voulez-vous les remplacer ?",
+                    "Confirmer le remplacement",
+                    MessageBoxButtons.YesNo,
+                    MessageBoxIcon.Warning,
+                    MessageBoxDefaultButton.Button2) != DialogResult.Yes)
+            {
+                return;
+            }
+
+            string[] exportedPaths = SlidePngExporter.Export(
+                _presenter.Presentation,
+                _presenter.MediaStore,
+                dialog.SelectedPath,
+                overwrite);
+            MessageBox.Show(
+                this,
+                $"{exportedPaths.Length} diapositive(s) exportée(s) en PNG dans :\n{dialog.SelectedPath}",
+                "Export terminé",
+                MessageBoxButtons.OK,
+                MessageBoxIcon.Information);
+        }
+        catch (Exception exception) when (
+            exception is ArgumentException
+                or DocumentValidationException
+                or ExternalException
+                or IOException
+                or InvalidOperationException
+                or KeyNotFoundException
+                or UnauthorizedAccessException
+                or OutOfMemoryException)
+        {
+            ShowUiError($"Impossible d'exporter les diapositives : {exception.Message}");
         }
     }
 
