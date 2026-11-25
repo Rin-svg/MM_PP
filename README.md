@@ -2,7 +2,7 @@
 
 Projet de cours réalisé en **équipe de 5** : une application de présentation « type PowerPoint », écrite en C# avec une interface WinForms.
 
-**État actuel : M1, M2 et M3 sont fusionnés dans `main`; M4 est en cours et M5 avance.** Le modèle, la validation et l'historique du Core sont couverts par 217 tests; les Presenters par 12 tests; le stockage `.slds` par 12 tests et l'UI par 8 tests. Les médias sont embarqués dans `media/` et validés avant décodage (format, taille et dimensions). La fenêtre M4 est reliée aux Presenters : documents, diapositives, menu contextuel, état du document et propriétés du texte et des formes via la liste des éléments. L'interface adopte un thème sombre bleu-nuit à accents orange, des panneaux arrondis et des boutons animés au survol et au clic. L'écran d'accueil propose la création ou l'ouverture d'une présentation, avec une transition de chargement animée et des illustrations en perspective. La sélection multiple, le copier/couper/coller, la duplication, la suppression et l'ordre de superposition sont accessibles par le menu Édition et le menu contextuel. Le panneau applique la mise en forme à toutes les zones de texte sélectionnées, montre les valeurs mixtes pour gras/italique et synchronise les changements avec l'historique. Le `SlideRenderer` dessine texte, formes et images à plusieurs échelles; le `SlideCanvas` affiche le rendu, prend en charge le zoom ancré à la souris, le déplacement de la vue, la sélection multiple, la rotation, le déplacement et le redimensionnement avec annulation groupée du geste. Le diaporama de la présentation, l'export PNG et les miniatures partagent le renderer; les miniatures utilisent un cache LRU borné à 24 Mo, adapté aux présentations jusqu'à 500 diapositives. L'export PDF reste à faire.
+**État actuel : M1, M2 et M3 sont fusionnés dans `main`; M4 est en cours et M5 avance.** Le modèle, la validation et l'historique du Core sont couverts par 217 tests; les Presenters par 12 tests; le stockage `.slds` par 12 tests et l'UI par 10 tests. Les médias sont embarqués dans `media/` et validés avant décodage (format, taille et dimensions). La fenêtre M4 est reliée aux Presenters : documents, diapositives, menu contextuel, état du document et propriétés du texte et des formes via la liste des éléments. L'interface adopte un thème sombre bleu-nuit à accents orange, des panneaux arrondis et des boutons animés au survol et au clic. L'écran d'accueil propose la création ou l'ouverture d'une présentation, avec une transition de chargement animée et des illustrations en perspective. La sélection multiple, le copier/couper/coller, la duplication, la suppression et l'ordre de superposition sont accessibles par le menu Édition et le menu contextuel. Le panneau applique la mise en forme à toutes les zones de texte sélectionnées, montre les valeurs mixtes pour gras/italique et synchronise les changements avec l'historique. Le `SlideRenderer` dessine texte, formes et images à plusieurs échelles; le `SlideCanvas` affiche le rendu, prend en charge le zoom ancré à la souris, le déplacement de la vue, la sélection multiple, la rotation, le déplacement et le redimensionnement avec annulation groupée du geste. Le diaporama, l'export PNG/PDF et les miniatures partagent le renderer; les miniatures utilisent un cache LRU borné à 24 Mo, adapté aux présentations jusqu'à 500 diapositives.
 
 ## Démarrage rapide
 
@@ -25,7 +25,7 @@ dotnet test tests/SlideStudio.Infrastructure.Tests
 dotnet test tests/SlideStudio.UI.Tests
 ```
 
-Les tests Infrastructure restent hors solution et sont lancés explicitement. Les tests UI ciblent Windows (`net10.0-windows`).
+Les tests Infrastructure restent hors solution et sont lancés explicitement. Les tests UI ciblent Windows (`net10.0-windows`). La CI Windows exécute aussi les quatre suites explicitement après une compilation Release.
 
 Avant votre premier commit : configurez votre identité git (voir [CONTRIBUTING.md](CONTRIBUTING.md), section 1), sinon vos commits ne seront pas associés à votre profil GitHub.
 
@@ -87,7 +87,7 @@ Chaque tâche ci-dessous devient une **Issue GitHub** (une par ligne de liste), 
 
 ### Membre 5 — Diaporama, design et qualité (jalons M6 et M7, et transversal)
 - Mode diaporama plein écran (flèches, Échap, écran noir), branché à la présentation courante via F5; le lancement depuis des fichiers image reste également disponible.
-- Export des diapositives en images PNG : **implémenté**; export PDF (piste à étudier ensemble).
+- Export des diapositives en images PNG : **implémenté**; export PDF : **implémenté**.
 - Design : palette, thèmes de diapositives, icônes, cohérence visuelle, contraste du texte (≥ 4,5:1) ; accessibilité (utilisable au clavier seul).
 - Qualité : dérouler une liste de scénarios à risque (double-clic sur Enregistrer, fichier verrouillé, fermeture sans enregistrer…) avant chaque grande fusion ; mettre en place la CI (compilation + tests à chaque PR) ; tenir à jour ce README et les schémas d'architecture ; préparer la démonstration finale.
 - *Dépend de :* `SlideRenderer` du membre 4.

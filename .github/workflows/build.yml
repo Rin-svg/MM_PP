@@ -22,5 +22,17 @@ jobs:
       - name: Compiler
         run: dotnet build SlideStudio.sln --no-restore --configuration Release
 
-      - name: Tests
-        run: dotnet test SlideStudio.sln --no-build --configuration Release
+      - name: Compiler les tests Infrastructure
+        run: dotnet build tests/SlideStudio.Infrastructure.Tests/SlideStudio.Infrastructure.Tests.csproj --no-restore --configuration Release
+
+      - name: Tests Core
+        run: dotnet test tests/SlideStudio.Core.Tests/SlideStudio.Core.Tests.csproj --no-build --configuration Release
+
+      - name: Tests Presenters
+        run: dotnet test tests/SlideStudio.Presenters.Tests/SlideStudio.Presenters.Tests.csproj --no-build --configuration Release
+
+      - name: Tests Infrastructure
+        run: dotnet test tests/SlideStudio.Infrastructure.Tests/SlideStudio.Infrastructure.Tests.csproj --no-build --configuration Release
+
+      - name: Tests UI
+        run: dotnet test tests/SlideStudio.UI.Tests/SlideStudio.UI.Tests.csproj --no-build --configuration Release
