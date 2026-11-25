@@ -557,8 +557,8 @@ public partial class Form1 : Form, IMainView, ISelectionView
             RowCount = rows,
             AutoSize = false
         };
-        layout.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 38));
-        layout.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 62));
+        layout.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 92));
+        layout.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
         for (int row = 0; row < rows; row++)
         {
             layout.RowStyles.Add(new RowStyle(SizeType.Percent, 100f / rows));
