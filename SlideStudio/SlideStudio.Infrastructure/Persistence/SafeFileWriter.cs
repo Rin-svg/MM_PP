@@ -38,3 +38,19 @@ public sealed class SafeFileWriter
         throw new NotImplementedException();
     }
 }
+
+
+   // Crée une copie de secours : fichier.slds.bak
+    public async Task CreateBackupAsync(string filePath, CancellationToken cancellationToken = default)
+    {
+        if (!File.Exists(filePath))
+            return;
+
+        var backupPath = filePath + ".bak";
+
+        await Task.Run(() =>
+        {
+            File.Copy(filePath, backupPath, overwrite: true);
+        }, cancellationToken).ConfigureAwait(false);
+    }
+}
