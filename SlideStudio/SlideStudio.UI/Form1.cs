@@ -500,6 +500,7 @@ public partial class Form1 : Form, IMainView, ISelectionView
         fileMenu.DropDownItems.Add(CreateMenuItem("Enregistrer sous…", Keys.Control | Keys.Shift | Keys.S, (_, _) => _presenter.SaveAs()));
         fileMenu.DropDownItems.Add(new ToolStripSeparator());
         fileMenu.DropDownItems.Add(CreateMenuItem("Exporter les diapositives en PNG…", Keys.None, ExportSlidesAsPng));
+        fileMenu.DropDownItems.Add(CreateMenuItem("Exporter la présentation en PDF…", Keys.None, ExportPresentationAsPdf));
         fileMenu.DropDownItems.Add(new ToolStripSeparator());
         fileMenu.DropDownItems.Add(CreateMenuItem("Quitter", Keys.Alt | Keys.F4, (_, _) => Close()));
 
@@ -1628,6 +1629,52 @@ public partial class Form1 : Form, IMainView, ISelectionView
                 or OutOfMemoryException)
         {
             ShowUiError($"Impossible d'exporter les diapositives : {exception.Message}");
+        }
+    }
+
+    private void ExportPresentationAsPdf(object? sender, EventArgs e)
+    {
+        using SaveFileDialog dialog = new()
+        {
+            Title = "Exporter la présentation en PDF",
+            Filter = "Document PDF|*.pdf",
+            AddExtension = true,
+            DefaultExt = "pdf",
+            OverwritePrompt = true,
+            FileName = "presentation.pdf"
+        };
+        if (dialog.ShowDialog(this) != DialogResult.OK)
+        {
+            return;
+        }
+
+        try
+        {
+            string directory = Path.GetDirectoryName(dialog.FileName)
+                ?? throw new ArgumentException("Le chemin du fichier PDF est invalide.");
+            string outputPath = SlidePdfExporter.Export(
+                _presenter.Presentation,
+                _presenter.MediaStore,
+                directory,
+                overwrite: true);
+            MessageBox.Show(
+                this,
+                $"Présentation exportée en PDF :\n{outputPath}",
+                "Export terminé",
+                MessageBoxButtons.OK,
+                MessageBoxIcon.Information);
+        }
+        catch (Exception exception) when (
+            exception is ArgumentException
+                or DocumentValidationException
+                or ExternalException
+                or IOException
+                or InvalidOperationException
+                or KeyNotFoundException
+                or UnauthorizedAccessException
+                or OutOfMemoryException)
+        {
+            ShowUiError($"Impossible d'exporter le PDF : {exception.Message}");
         }
     }
 

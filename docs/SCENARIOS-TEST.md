@@ -28,4 +28,4 @@
 
 ## 6. Exportation
 - Vérifier l'exportation en PNG.
-- Vérifier l'exportation en PDF.
+- Vérifier l'exportation en PDF avec une page par diapositive, un PDF valide et la confirmation avant remplacement.
