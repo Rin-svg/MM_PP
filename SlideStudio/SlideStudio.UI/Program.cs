@@ -1,3 +1,6 @@
+using SlideStudio.Infrastructure;
+using SlideStudio.Presenters;
+
 namespace SlideStudio.UI;
 
 /// <summary>Point d'entrée de l'application WinForms.</summary>
@@ -15,7 +18,19 @@ internal static class Program
             (_, e) => AfficherErreur(e.ExceptionObject as Exception);
 
         ApplicationConfiguration.Initialize();
-        Application.Run(new Form1());
+
+        // POURQUOI : c'est le seul endroit qui connaît toutes les couches ;
+        // les Presenters et l'interface ne se connaissent que par leurs contrats.
+        var fenetre = new Form1();
+        var dialogues = new WinFormsDialogService();
+        var stockage = new SldsDocumentStorage();
+        var presenter = new MainPresenter(fenetre, dialogues, stockage);
+
+        Application.Run(fenetre);
+
+        // ATTENTION : rien d'autre ne garde le Presenter en vie ; sans cette ligne,
+        // le ramasse-miettes pourrait le supprimer pendant que la fenêtre est ouverte.
+        GC.KeepAlive(presenter);
     }
 
     /// <summary>Affiche une erreur inattendue dans un message lisible.</summary>
