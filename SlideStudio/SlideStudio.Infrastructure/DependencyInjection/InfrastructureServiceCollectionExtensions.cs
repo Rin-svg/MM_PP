@@ -4,7 +4,18 @@ using SlideStudio.Infrastructure.Persistence;
 
 namespace SlideStudio.Infrastructure.DependencyInjection;
 {
-    internal class InfrastructureServiceCollectionExtensions
+    public static class InfrastructureServiceCollectionExtensions
+{
+    // Enregistre les services de la couche Infrastructure.
+    // À appeler depuis Program.cs :
+    // services.AddInfrastructure();
+
+    public static IServiceCollection AddInfrastructure(this IServiceCollection services)
     {
+        services.AddSingleton<SafeFileWriter>();
+        services.AddSingleton<IPresentationRepository, JsonPresentationRepository>();
+
+        return services;
     }
+}
 }
