@@ -5,9 +5,8 @@ using System.Text;
 
 namespace SlideStudio.Infrastructure.FileFormat;
 
-/// <summary>
-/// Convertit entre les modèles métier (Core) et les DTOs de sérialisation JSON.
-/// </summary>
+// Convertit entre les modèles métier (Core) et les DTOs de sérialisation JSON.
+
 public static class SldsMapper
 {
     private static Func<object, int, object> ToSlideDto;
@@ -29,3 +28,16 @@ public static class SldsMapper
         };
     }
 }
+
+public static Presentation ToDomain(SldsDocumentDto dto)
+    {
+        return new Presentation
+        {
+            Title = dto.Presentation.Title,
+            SlideWidth = dto.Presentation.SlideWidth,
+            SlideHeight = dto.Presentation.SlideHeight,
+            Slides = dto.Presentation.Slides.Select(ToSlideDomain).ToList()
+        };
+
+
+    }
