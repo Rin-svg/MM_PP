@@ -2,7 +2,7 @@
 
 Projet de cours réalisé en **équipe de 5** : une application de présentation « type PowerPoint », écrite en C# avec une interface WinForms.
 
-**État actuel : M1, M2 et M3 sont fusionnés dans `main`; M4 est en cours.** Le modèle, la validation et l'historique du Core sont couverts par 215 tests; les Presenters par 12 tests; et le stockage `.slds` par 12 tests. Les médias sont embarqués dans `media/` et validés avant décodage (format, taille et dimensions). La fenêtre M4 est reliée aux Presenters : documents, diapositives, menu contextuel, état du document et propriétés du texte et des formes via la liste des éléments. Les miniatures graphiques et le rendu sur le canevas dépendent du `SlideRenderer` prévu en M5.
+**État actuel : M1, M2 et M3 sont fusionnés dans `main`; M4 est en cours.** Le modèle, la validation et l'historique du Core sont couverts par 215 tests; les Presenters par 12 tests; et le stockage `.slds` par 12 tests. Les médias sont embarqués dans `media/` et validés avant décodage (format, taille et dimensions). La fenêtre M4 est reliée aux Presenters : documents, diapositives, menu contextuel, état du document et propriétés du texte et des formes via la liste des éléments. Le panneau permet aussi l'alignement du texte et l'épaisseur des contours, et se synchronise avec l'historique annuler/rétablir. Les miniatures graphiques et le rendu sur le canevas dépendent du `SlideRenderer` prévu en M5.
 
 ## Démarrage rapide
 
@@ -74,7 +74,7 @@ Chaque tâche ci-dessous devient une **Issue GitHub** (une par ligne de liste), 
 - Compléter le projet WinForms existant (`SlideStudio/SlideStudio.UI`, `net10.0-windows`) et `Program.cs` : prise en charge DPI PerMonitorV2, filet d'erreurs non gérées et assemblage des couches. La fenêtre est reliée au `MainPresenter` pour les opérations de document et de diapositives.
 - Fenêtre principale : menus, barre d'outils, raccourcis (Ctrl+N/O/S/Z/Y…), barre d'état, astérisque « modifié » dans le titre.
 - Panneau de diapositives avec glisser-déposer et menu contextuel; les miniatures graphiques et leur validation à 500 diapositives attendent le `SlideRenderer` de M5.
-- Panneau de propriétés pour le titre, le fond, et les éléments sélectionnés (police, taille, gras, italique, couleurs) avec boîtes de dialogue WinForms.
+- Panneau de propriétés pour le titre, le fond, et les éléments sélectionnés (police, taille, alignement, gras, italique, couleurs et épaisseur du contour) avec boîtes de dialogue WinForms; les valeurs suivent l'historique annuler/rétablir.
 - *Livrable :* fenêtre complète branchée aux Presenters. *Dépend de :* interfaces du membre 2, `SlideRenderer` du membre 4 (miniatures).
 
 ### Membre 4 — Zone de dessin et édition (jalon M5)
