@@ -1,155 +1,147 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
 using System.Text.Json.Serialization;
+
 namespace SlideStudio.Infrastructure.FileFormat;
 
-/// <summary>
-/// Racine du fichier .slds (format JSON).
-/// </summary>
-/// 
-public class MediaItemDto
-{
-}
-
-public class PresentationDto1
-{
-}
+/// <summary>Racine du format JSON contenu dans une archive .slds.</summary>
 public sealed class SldsDocumentDto
 {
+    /// <summary>Version du format.</summary>
     [JsonPropertyName("formatVersion")]
     public string FormatVersion { get; set; } = "1.0";
 
+    /// <summary>Nom de l'application créatrice.</summary>
     [JsonPropertyName("app")]
     public string App { get; set; } = "SlideStudio";
 
+    /// <summary>Présentation sérialisée.</summary>
     [JsonPropertyName("presentation")]
-    public PresentationDto1 Presentation { get; set; } = new();
-
-    [JsonPropertyName("media")]
-    public Dictionary<string, MediaItemDto> Media { get; set; } = new();
+    public PresentationDto Presentation { get; set; } = new();
 }
 
+/// <summary>Présentation dans le format .slds.</summary>
 public sealed class PresentationDto
 {
+    /// <summary>Titre.</summary>
     [JsonPropertyName("title")]
     public string Title { get; set; } = string.Empty;
 
+    /// <summary>Largeur logique.</summary>
     [JsonPropertyName("slideWidth")]
-    public int SlideWidth { get; set; } = 1920;
+    public double SlideWidth { get; set; } = 1280;
 
+    /// <summary>Hauteur logique.</summary>
     [JsonPropertyName("slideHeight")]
-    public int SlideHeight { get; set; } = 1080;
+    public double SlideHeight { get; set; } = 720;
 
+    /// <summary>Diapositives dans l'ordre.</summary>
     [JsonPropertyName("slides")]
-    public List<SlideDto> Slides { get; set; } = new();
+    public List<SlideDto> Slides { get; set; } = [];
 }
 
+/// <summary>Diapositive dans le format .slds.</summary>
 public sealed class SlideDto
 {
+    /// <summary>Identifiant.</summary>
     [JsonPropertyName("id")]
     public string Id { get; set; } = string.Empty;
 
+    /// <summary>Couleur de fond.</summary>
     [JsonPropertyName("background")]
-    public BackgroundDto Background { get; set; } = new();
+    public string Background { get; set; } = "#FFFFFF";
 
+    /// <summary>Éléments du fond vers le premier plan.</summary>
     [JsonPropertyName("elements")]
-    public List<ElementDto> Elements { get; set; } = new();
-
-   
+    public List<ElementDto> Elements { get; set; } = [];
 }
 
-public class ElementDto
+/// <summary>Élément polymorphique dans le format .slds.</summary>
+public sealed class ElementDto
 {
-}
-
-public class BackgroundDto
-{
-}
-
-public sealed class BackgroundDto2
-{
+    /// <summary>Type polymorphique de l'élément.</summary>
     [JsonPropertyName("type")]
-    public string Type { get; set; } = "Solid";
+    public string Type { get; set; } = string.Empty;
 
-    [JsonPropertyName("color")]
-    public string? Color { get; set; }
-
-    [JsonPropertyName("imageId")]
-    public string? ImageId { get; set; }
-}
-
-
-// Élément de diapositive. Le champ "type" discrimine Text / Image / etc.
-
-public sealed class ElementDto2
-{
+    /// <summary>Identifiant stable.</summary>
     [JsonPropertyName("id")]
     public string Id { get; set; } = string.Empty;
 
-    [JsonPropertyName("type")]
-    public string Type { get; set; } = string.Empty; // "Text" | "Image"
+    /// <summary>Cadre géométrique.</summary>
+    [JsonPropertyName("frame")]
+    public FrameDto Frame { get; set; } = new();
 
+    /// <summary>Contenu texte, si applicable.</summary>
+    [JsonPropertyName("text")]
+    public string? Text { get; set; }
+
+    /// <summary>Police du texte, si applicable.</summary>
+    [JsonPropertyName("fontFamily")]
+    public string? FontFamily { get; set; }
+
+    /// <summary>Taille du texte en points, si applicable.</summary>
+    [JsonPropertyName("fontSizePoints")]
+    public double? FontSizePoints { get; set; }
+
+    /// <summary>Indicateur gras, si applicable.</summary>
+    [JsonPropertyName("isBold")]
+    public bool? IsBold { get; set; }
+
+    /// <summary>Indicateur italique, si applicable.</summary>
+    [JsonPropertyName("isItalic")]
+    public bool? IsItalic { get; set; }
+
+    /// <summary>Couleur du texte, si applicable.</summary>
+    [JsonPropertyName("textColor")]
+    public string? TextColor { get; set; }
+
+    /// <summary>Alignement du texte, si applicable.</summary>
+    [JsonPropertyName("alignment")]
+    public string? Alignment { get; set; }
+
+    /// <summary>Type de forme, si applicable.</summary>
+    [JsonPropertyName("shapeKind")]
+    public string? ShapeKind { get; set; }
+
+    /// <summary>Remplissage de forme, si applicable.</summary>
+    [JsonPropertyName("fill")]
+    public string? Fill { get; set; }
+
+    /// <summary>Contour de forme, si applicable.</summary>
+    [JsonPropertyName("stroke")]
+    public string? Stroke { get; set; }
+
+    /// <summary>Épaisseur du contour, si applicable.</summary>
+    [JsonPropertyName("strokeWidth")]
+    public double? StrokeWidth { get; set; }
+
+    /// <summary>Nom du média embarqué, si applicable.</summary>
+    [JsonPropertyName("mediaName")]
+    public string? MediaName { get; set; }
+
+    /// <summary>Texte alternatif de l'image, si applicable.</summary>
+    [JsonPropertyName("altText")]
+    public string? AltText { get; set; }
+}
+
+/// <summary>Cadre géométrique dans le format .slds.</summary>
+public sealed class FrameDto
+{
+    /// <summary>Abscisse.</summary>
     [JsonPropertyName("x")]
     public double X { get; set; }
 
+    /// <summary>Ordonnée.</summary>
     [JsonPropertyName("y")]
     public double Y { get; set; }
 
+    /// <summary>Largeur.</summary>
     [JsonPropertyName("width")]
     public double Width { get; set; }
 
+    /// <summary>Hauteur.</summary>
     [JsonPropertyName("height")]
     public double Height { get; set; }
 
-    [JsonPropertyName("zIndex")]
-    public int ZIndex { get; set; }
-
-    // --- Propriétés spécifiques Text ---
-    [JsonPropertyName("content")]
-    public string? Content { get; set; }
-
-    [JsonPropertyName("style")]
-    public TextStyleDto? Style { get; set; }
-
-    // --- Propriétés spécifiques Image ---
-    [JsonPropertyName("imageId")]
-    public string? ImageId { get; set; }
-}
-
-public class TextStyleDto
-{
-}
-
-public sealed class TextStyleDto2
-{
-    [JsonPropertyName("fontFamily")]
-    public string FontFamily { get; set; } = "Segoe UI";
-
-    [JsonPropertyName("fontSize")]
-    public double FontSize { get; set; } = 24;
-
-    [JsonPropertyName("bold")]
-    public bool Bold { get; set; }
-
-    [JsonPropertyName("italic")]
-    public bool Italic { get; set; }
-
-    [JsonPropertyName("color")]
-    public string Color { get; set; } = "#000000";
-
-    [JsonPropertyName("alignment")]
-    public string Alignment { get; set; } = "Left";
-}
-
-public sealed class MediaItemDto1
-{
-    [JsonPropertyName("fileName")]
-    public string FileName { get; set; } = string.Empty;
-
-    [JsonPropertyName("mimeType")]
-    public string MimeType { get; set; } = "image/png";
-
-    [JsonPropertyName("data")]
-    public string Data { get; set; } = string.Empty; // Base64
+    /// <summary>Rotation en degrés.</summary>
+    [JsonPropertyName("rotationDegrees")]
+    public double RotationDegrees { get; set; }
 }
