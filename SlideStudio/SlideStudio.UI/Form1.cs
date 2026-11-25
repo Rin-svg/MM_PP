@@ -14,17 +14,17 @@ namespace SlideStudio.UI;
 /// <summary>Fenêtre principale de SlideStudio, reliée aux services et au présentateur M3.</summary>
 public partial class Form1 : Form, IMainView, ISelectionView
 {
-    private static readonly Color WindowColor = Color.FromArgb(15, 17, 26);
-    private static readonly Color PanelColor = Color.FromArgb(25, 29, 42);
-    private static readonly Color ElevatedColor = Color.FromArgb(34, 39, 55);
-    private static readonly Color BorderColor = Color.FromArgb(57, 64, 83);
-    private static readonly Color PrimaryTextColor = Color.FromArgb(244, 246, 252);
-    private static readonly Color MutedTextColor = Color.FromArgb(169, 178, 198);
-    private static readonly Color AccentColor = Color.FromArgb(255, 101, 24);
-    private static readonly Color AccentHoverColor = Color.FromArgb(255, 129, 55);
-    private static readonly Color AccentPressedColor = Color.FromArgb(255, 145, 75);
-    private static readonly Color AccentTextColor = Color.FromArgb(25, 15, 10);
-    private static readonly Color SelectionColor = Color.FromArgb(53, 61, 82);
+    private static readonly Color WindowColor = UiPalette.Window;
+    private static readonly Color PanelColor = UiPalette.Panel;
+    private static readonly Color ElevatedColor = UiPalette.Elevated;
+    private static readonly Color BorderColor = UiPalette.Border;
+    private static readonly Color PrimaryTextColor = UiPalette.PrimaryText;
+    private static readonly Color MutedTextColor = UiPalette.MutedText;
+    private static readonly Color AccentColor = UiPalette.Accent;
+    private static readonly Color AccentHoverColor = UiPalette.AccentHover;
+    private static readonly Color AccentPressedColor = UiPalette.AccentPressed;
+    private static readonly Color AccentTextColor = UiPalette.AccentText;
+    private static readonly Color SelectionColor = UiPalette.Selection;
     private static readonly ToolStripRenderer DarkToolStripRenderer = new DarkRenderer();
 
     private readonly ListBox _slideList = new();
@@ -1941,7 +1941,7 @@ public partial class Form1 : Form, IMainView, ISelectionView
             Color border = Enabled ? ColorBlend(_borderColor, _hoverColor, Math.Min(_visualState, 1) * 0.65f) : BorderColor;
             if (!Enabled)
             {
-                fill = Color.FromArgb(39, 43, 55);
+                fill = UiPalette.DisabledSurface;
             }
 
             using GraphicsPath path = CreateRoundedPath(bounds, 9);

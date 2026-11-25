@@ -11,13 +11,13 @@ internal enum StartupAction
 
 internal sealed class WelcomeScreen : UserControl
 {
-    private static readonly Color WindowColor = Color.FromArgb(15, 17, 26);
-    private static readonly Color PanelColor = Color.FromArgb(25, 29, 42);
-    private static readonly Color BorderColor = Color.FromArgb(57, 64, 83);
-    private static readonly Color PrimaryTextColor = Color.FromArgb(244, 246, 252);
-    private static readonly Color MutedTextColor = Color.FromArgb(169, 178, 198);
-    private static readonly Color AccentColor = Color.FromArgb(255, 101, 24);
-    private static readonly Color AccentLightColor = Color.FromArgb(255, 145, 75);
+    private static readonly Color WindowColor = UiPalette.Window;
+    private static readonly Color PanelColor = UiPalette.Panel;
+    private static readonly Color BorderColor = UiPalette.Border;
+    private static readonly Color PrimaryTextColor = UiPalette.PrimaryText;
+    private static readonly Color MutedTextColor = UiPalette.MutedText;
+    private static readonly Color AccentColor = UiPalette.Accent;
+    private static readonly Color AccentLightColor = UiPalette.AccentPressed;
     private const int SceneTop = 66;
     private readonly System.Windows.Forms.Timer _motionTimer = new() { Interval = 16 };
     private Bitmap? _staticBackground;
@@ -446,7 +446,7 @@ internal sealed class WelcomeScreen : UserControl
         string title = newPresentation ? "Créer une présentation" : "Ouvrir un projet";
         string description = newPresentation ? "Partez d'une toile vierge." : "Reprenez un projet existant.";
         string action = newPresentation ? "COMMENCER  →" : "CHOISIR UN FICHIER  →";
-        using SolidBrush eyebrowBrush = new(AccentColor);
+        using SolidBrush eyebrowBrush = new(AccentLightColor);
         using Font eyebrowFont = new("Segoe UI", 8, FontStyle.Bold);
         graphics.DrawString(eyebrow, eyebrowFont, eyebrowBrush, bounds.Left + 22, bounds.Top + 87);
         using SolidBrush titleBrush = new(PrimaryTextColor);
@@ -722,7 +722,7 @@ internal sealed class WelcomeScreen : UserControl
             using SolidBrush shadow = new(Color.FromArgb((int)(38 + _hover * 24), 0, 0, 0));
             FillRounded(e.Graphics, shadow, shadowBounds, 18);
 
-            Color baseColor = Blend(PanelColor, Color.FromArgb(37, 43, 61), _hover);
+            Color baseColor = Blend(PanelColor, UiPalette.CardHover, _hover);
             using LinearGradientBrush background = new(
                 cardBounds,
                 Color.FromArgb(Math.Min(255, baseColor.R + 8), Math.Min(255, baseColor.G + 8), Math.Min(255, baseColor.B + 10)),
@@ -740,7 +740,7 @@ internal sealed class WelcomeScreen : UserControl
             DrawMiniPresentation(e.Graphics, _action == StartupAction.NewPresentation);
             e.Graphics.Restore(state);
 
-            using SolidBrush eyebrowBrush = new(AccentColor);
+            using SolidBrush eyebrowBrush = new(AccentLightColor);
             using Font eyebrowFont = new("Segoe UI", 8, FontStyle.Bold);
             e.Graphics.DrawString(_eyebrow, eyebrowFont, eyebrowBrush, cardBounds.Left + 22, cardBounds.Top + 87);
             using Font titleFont = new("Segoe UI Semibold", 16, FontStyle.Bold);
@@ -842,11 +842,11 @@ internal sealed class WelcomeScreen : UserControl
 
 internal sealed class LoadingScreen : Control
 {
-    private static readonly Color WindowColor = Color.FromArgb(15, 17, 26);
-    private static readonly Color PrimaryTextColor = Color.FromArgb(244, 246, 252);
-    private static readonly Color MutedTextColor = Color.FromArgb(169, 178, 198);
-    private static readonly Color AccentColor = Color.FromArgb(255, 101, 24);
-    private static readonly Color AccentLightColor = Color.FromArgb(255, 145, 75);
+    private static readonly Color WindowColor = UiPalette.Window;
+    private static readonly Color PrimaryTextColor = UiPalette.PrimaryText;
+    private static readonly Color MutedTextColor = UiPalette.MutedText;
+    private static readonly Color AccentColor = UiPalette.Accent;
+    private static readonly Color AccentLightColor = UiPalette.AccentPressed;
     private readonly System.Windows.Forms.Timer _timer = new() { Interval = 30 };
     private float _progress;
     private float _rotation;
