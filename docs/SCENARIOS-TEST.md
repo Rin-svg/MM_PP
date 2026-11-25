@@ -20,9 +20,10 @@
 - Vérifier la fermeture sans enregistrer.
 
 ## 5. Diaporama
-- Vérifier le lancement avec F5.
+- Depuis la fenêtre principale, choisir plusieurs fichiers image et lancer le diaporama.
 - Vérifier le passage à la diapositive suivante.
 - Vérifier le retour à la diapositive précédente.
+- Vérifier l'écran noir avec B.
 - Vérifier la fermeture avec Échap.
 
 ## 6. Exportation

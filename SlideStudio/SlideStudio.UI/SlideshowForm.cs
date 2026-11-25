@@ -6,6 +6,7 @@ using System.Windows.Forms;
 
 namespace SlideStudio.UI;
 
+/// <summary>Affiche une séquence d'images en plein écran avec navigation au clavier.</summary>
 public class SlideshowForm : Form
 {
     private readonly List<Image> _slides;
@@ -13,9 +14,33 @@ public class SlideshowForm : Form
     private int _currentIndex;
     private bool _blackScreen;
 
+    /// <summary>Crée un diaporama à partir d'images, qu'il copie et libère avec la fenêtre.</summary>
     public SlideshowForm(IEnumerable<Image> slides)
     {
-        _slides = new List<Image>(slides);
+        ArgumentNullException.ThrowIfNull(slides);
+        _slides = [];
+        try
+        {
+            foreach (Image slide in slides)
+            {
+                ArgumentNullException.ThrowIfNull(slide);
+                _slides.Add(new Bitmap(slide));
+            }
+        }
+        catch
+        {
+            foreach (Image slide in _slides)
+            {
+                slide.Dispose();
+            }
+
+            throw;
+        }
+
+        if (_slides.Count == 0)
+        {
+            throw new ArgumentException("Le diaporama doit contenir au moins une image.", nameof(slides));
+        }
 
         Text = "SlideStudio - Diaporama";
         WindowState = FormWindowState.Maximized;
@@ -34,14 +59,30 @@ public class SlideshowForm : Form
 
         KeyDown += SlideshowForm_KeyDown;
 
-        if (_slides.Count > 0)
-            ShowSlide();
+        ShowSlide();
+    }
+
+    /// <inheritdoc />
+    protected override void Dispose(bool disposing)
+    {
+        if (disposing)
+        {
+            _pictureBox.Image = null;
+            foreach (Image slide in _slides)
+            {
+                slide.Dispose();
+            }
+        }
+
+        base.Dispose(disposing);
     }
 
     private void ShowSlide()
     {
         if (_slides.Count == 0)
+        {
             return;
+        }
 
         _blackScreen = false;
         _pictureBox.Image = _slides[_currentIndex];
@@ -64,7 +105,9 @@ public class SlideshowForm : Form
         }
 
         if (_blackScreen)
+        {
             return;
+        }
 
         if (e.KeyCode == Keys.Right || e.KeyCode == Keys.Space)
         {
