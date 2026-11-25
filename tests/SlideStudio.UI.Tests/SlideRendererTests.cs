@@ -9,6 +9,32 @@ namespace SlideStudio.UI.Tests;
 public sealed class SlideRendererTests
 {
     [Fact]
+    public void ThumbnailCache_ReusesSlideAndEvictsAtBound()
+    {
+        using SlideRenderer renderer = new();
+        using ThumbnailCache cache = new(renderer);
+        Slide slide = new();
+
+        using Bitmap first = new(192, 108);
+        using Graphics graphics = Graphics.FromImage(first);
+        cache.Draw(graphics, slide, new Rectangle(0, 0, 192, 108));
+        Assert.Equal(1, cache.Count);
+
+        cache.Draw(graphics, slide, new Rectangle(0, 0, 192, 108));
+        Assert.Equal(1, cache.Count);
+
+        cache.Invalidate(slide);
+        Assert.Equal(0, cache.Count);
+
+        for (int index = 0; index < 500; index++)
+        {
+            Slide fifthHundred = new();
+            cache.Draw(graphics, fifthHundred, new Rectangle(0, 0, 192, 108));
+        }
+        Assert.True(cache.Count < 500);
+    }
+
+    [Fact]
     public void Render_DrawsShapeAndTextAtAnyScale()
     {
         Slide slide = new();

@@ -28,6 +28,7 @@ public partial class Form1 : Form, IMainView, ISelectionView
     private readonly ListBox _slideList = new();
     private readonly RoundedPanel _slideSurface = new();
     private readonly SlideRenderer _slideRenderer = new();
+    private readonly ThumbnailCache _thumbnailCache;
     private readonly SlideCanvas _slideCanvas;
     private readonly Label _slideCount = new();
     private readonly ToolStripStatusLabel _modifiedStatus = new();
@@ -88,6 +89,7 @@ public partial class Form1 : Form, IMainView, ISelectionView
     public Form1()
     {
         _slideCanvas = new SlideCanvas(_slideRenderer);
+        _thumbnailCache = new ThumbnailCache(_slideRenderer);
         InitializeComponent();
         BuildInterface();
         _presenter = new MainPresenter(this, new WinFormsDialogService(this), new SldsDocumentStorage());
@@ -121,6 +123,7 @@ public partial class Form1 : Form, IMainView, ISelectionView
         _updatingView = true;
         try
         {
+            _thumbnailCache.Clear();
             _slideList.BeginUpdate();
             _slideList.Items.Clear();
             for (int index = 0; index < presentation.Slides.Count; index++)
@@ -332,7 +335,11 @@ public partial class Form1 : Form, IMainView, ISelectionView
         _slideCanvas.FramesChangeRequested += SlideCanvas_FramesChangeRequested;
         _slideCanvas.TextChangeRequested += SlideCanvas_TextChangeRequested;
         _slideCanvas.ZoomChanged += (_, _) => _zoomStatus.Text = $"{_slideCanvas.ZoomFactor:P0}";
-        FormClosed += (_, _) => _slideRenderer.Dispose();
+        FormClosed += (_, _) =>
+        {
+            _thumbnailCache.Dispose();
+            _slideRenderer.Dispose();
+        };
         Controls.Add(_welcomeScreen);
         Controls.Add(_loadingScreen);
         _welcomeScreen.BringToFront();
@@ -1136,7 +1143,7 @@ public partial class Form1 : Form, IMainView, ISelectionView
             using (GraphicsPath thumbnailClip = CreateRoundedPath(thumbnail, 7))
             {
                 e.Graphics.SetClip(thumbnailClip);
-                _slideRenderer.Draw(e.Graphics, item.Slide, thumbnail);
+                _thumbnailCache.Draw(e.Graphics, item.Slide, thumbnail);
             }
             e.Graphics.Restore(thumbnailState);
             DrawRoundedRectangle(e.Graphics, borderPen, thumbnail, 7);
