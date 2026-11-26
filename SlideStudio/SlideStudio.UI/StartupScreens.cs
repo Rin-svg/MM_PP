@@ -183,6 +183,12 @@ internal sealed class WelcomeScreen : UserControl
         Invalidate();
     }
 
+    protected override bool IsInputKey(Keys keyData) =>
+        IsCarouselNavigationKey(keyData) || base.IsInputKey(keyData);
+
+    internal static bool IsCarouselNavigationKey(Keys keyData) =>
+        (keyData & Keys.KeyCode) is Keys.Left or Keys.Right;
+
     protected override void OnMouseUp(MouseEventArgs e)
     {
         int releasedCard = GetCardAt(e.Location);
@@ -380,12 +386,12 @@ internal sealed class WelcomeScreen : UserControl
         using SolidBrush accent = new(AccentColor);
         using SolidBrush primary = new(PrimaryTextColor);
         using SolidBrush muted = new(MutedTextColor);
-        using Font brandFont = new("Segoe UI Semibold", 12, FontStyle.Bold);
-        using Font editionFont = new("Segoe UI", 8.5f, FontStyle.Bold);
-        using Font eyebrowFont = new("Segoe UI", 9, FontStyle.Bold);
-        using Font titleFont = new("Segoe UI Semibold", 30, FontStyle.Bold);
-        using Font descriptionFont = new("Segoe UI", 11, FontStyle.Regular);
-        using Font footerFont = new("Segoe UI", 9, FontStyle.Regular);
+        using Font brandFont = new(UiPalette.DisplayFontFamily, 12, FontStyle.Bold);
+        using Font editionFont = new(UiPalette.TextFontFamily, 8.5f, FontStyle.Bold);
+        using Font eyebrowFont = new(UiPalette.TextFontFamily, 9, FontStyle.Bold);
+        using Font titleFont = new(UiPalette.DisplayFontFamily, 30, FontStyle.Regular);
+        using Font descriptionFont = new(UiPalette.TextFontFamily, 11, FontStyle.Regular);
+        using Font footerFont = new(UiPalette.TextFontFamily, 9, FontStyle.Regular);
 
         graphics.SmoothingMode = SmoothingMode.AntiAlias;
         graphics.FillEllipse(accent, 29, 36, 8, 8);
@@ -491,16 +497,16 @@ internal sealed class WelcomeScreen : UserControl
         string description = newPresentation ? "Partez d'une toile vierge." : "Reprenez un projet existant.";
         string action = newPresentation ? "COMMENCER  →" : "CHOISIR UN FICHIER  →";
         using SolidBrush eyebrowBrush = new(AccentLightColor);
-        using Font eyebrowFont = new("Segoe UI", 8, FontStyle.Bold);
+        using Font eyebrowFont = new(UiPalette.TextFontFamily, 8, FontStyle.Bold);
         graphics.DrawString(eyebrow, eyebrowFont, eyebrowBrush, bounds.Left + 22, bounds.Top + 87);
         using SolidBrush titleBrush = new(PrimaryTextColor);
-        using Font titleFont = new("Segoe UI Semibold", 16, FontStyle.Bold);
+        using Font titleFont = new(UiPalette.DisplayFontFamily, 16, FontStyle.Bold);
         graphics.DrawString(title, titleFont, titleBrush, new RectangleF(bounds.Left + 22, bounds.Top + 105, bounds.Width - 42, 33));
         using SolidBrush descriptionBrush = new(MutedTextColor);
-        using Font descriptionFont = new("Segoe UI", 9, FontStyle.Regular);
+        using Font descriptionFont = new(UiPalette.TextFontFamily, 9, FontStyle.Regular);
         graphics.DrawString(description, descriptionFont, descriptionBrush, new RectangleF(bounds.Left + 22, bounds.Top + 139, bounds.Width - 44, 34));
         using SolidBrush actionBrush = new(PrimaryTextColor);
-        using Font actionFont = new("Segoe UI", 9, FontStyle.Bold);
+        using Font actionFont = new(UiPalette.TextFontFamily, 9, FontStyle.Bold);
         graphics.DrawString(action, actionFont, actionBrush, bounds.Left + 22, bounds.Bottom - 22);
         return artwork;
     }
@@ -785,15 +791,15 @@ internal sealed class WelcomeScreen : UserControl
             e.Graphics.Restore(state);
 
             using SolidBrush eyebrowBrush = new(AccentLightColor);
-            using Font eyebrowFont = new("Segoe UI", 8, FontStyle.Bold);
+            using Font eyebrowFont = new(UiPalette.TextFontFamily, 8, FontStyle.Bold);
             e.Graphics.DrawString(_eyebrow, eyebrowFont, eyebrowBrush, cardBounds.Left + 22, cardBounds.Top + 87);
-            using Font titleFont = new("Segoe UI Semibold", 16, FontStyle.Bold);
+            using Font titleFont = new(UiPalette.DisplayFontFamily, 16, FontStyle.Bold);
             using SolidBrush titleBrush = new(PrimaryTextColor);
             e.Graphics.DrawString(Text, titleFont, titleBrush, new RectangleF(cardBounds.Left + 22, cardBounds.Top + 105, cardBounds.Width - 42, 33));
-            using Font descriptionFont = new("Segoe UI", 9, FontStyle.Regular);
+            using Font descriptionFont = new(UiPalette.TextFontFamily, 9, FontStyle.Regular);
             using SolidBrush descriptionBrush = new(MutedTextColor);
             e.Graphics.DrawString(_description, descriptionFont, descriptionBrush, new RectangleF(cardBounds.Left + 22, cardBounds.Top + 139, cardBounds.Width - 44, 34));
-            using Font actionFont = new("Segoe UI", 9, FontStyle.Bold);
+            using Font actionFont = new(UiPalette.TextFontFamily, 9, FontStyle.Bold);
             using SolidBrush actionBrush = new(PrimaryTextColor);
             string actionLabel = _action == StartupAction.NewPresentation ? "COMMENCER  →" : "CHOISIR UN FICHIER  →";
             e.Graphics.DrawString(actionLabel, actionFont, actionBrush, cardBounds.Left + 22, cardBounds.Bottom - 22);
@@ -952,12 +958,12 @@ internal sealed class LoadingScreen : Control
         float centerY = Height / 2f - 76;
         DrawLoadingObject(graphics, centerX, centerY);
 
-        using Font titleFont = new("Segoe UI Semibold", 17, FontStyle.Bold);
+        using Font titleFont = new(UiPalette.DisplayFontFamily, 17, FontStyle.Bold);
         using SolidBrush titleBrush = new(PrimaryTextColor);
         TextRenderer.DrawText(graphics, "Préparation de votre espace", titleFont,
             new Rectangle(0, (int)centerY + 68, Width, 34), PrimaryTextColor,
             TextFormatFlags.HorizontalCenter | TextFormatFlags.VerticalCenter);
-        using Font subtitleFont = new("Segoe UI", 9.5f, FontStyle.Regular);
+        using Font subtitleFont = new(UiPalette.TextFontFamily, 9.5f, FontStyle.Regular);
         TextRenderer.DrawText(graphics, "Encore un instant…", subtitleFont,
             new Rectangle(0, (int)centerY + 105, Width, 25), MutedTextColor,
             TextFormatFlags.HorizontalCenter | TextFormatFlags.VerticalCenter);
@@ -1052,7 +1058,7 @@ internal sealed class LoadingScreen : Control
 
         using SolidBrush markShadow = new(Color.FromArgb(35, 122, 34, 3));
         FillRounded(graphics, markShadow, new Rectangle(-36, -29, 72, 58), 14);
-        using Font markFont = new("Segoe UI", 40, FontStyle.Bold);
+        using Font markFont = new(UiPalette.DisplayFontFamily, 40, FontStyle.Bold);
         TextRenderer.DrawText(graphics, "S", markFont, new Rectangle(-34, -37, 68, 72), Color.White,
             TextFormatFlags.HorizontalCenter | TextFormatFlags.VerticalCenter);
         graphics.Restore(state);
