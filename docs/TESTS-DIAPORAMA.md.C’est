@@ -1,0 +1,30 @@
+Scénarios de tests – Diaporama
+
+1. Lancement
+
+* Vérifier que la présentation démarre en plein écran.
+* Vérifier que la première diapositive s’affiche correctement.
+* Vérifier que la fenêtre occupe tout l’écran.
+
+2. Navigation
+
+* Appuyer sur la flèche droite pour avancer.
+* Appuyer sur la flèche gauche pour revenir en arrière.
+* Vérifier que la dernière diapositive ne dépasse pas les limites.
+* Vérifier que la première diapositive ne recule pas davantage.
+
+3. Commandes clavier
+
+* Appuyer sur Échap pour quitter le diaporama.
+* Appuyer sur Espace pour avancer.
+* Vérifier le fonctionnement de l’écran noir avec la touche B.
+
+4. Affichage
+
+* Vérifier que les images restent proportionnelles.
+* Vérifier que les diapositives sont lisibles.
+* Vérifier que l’affichage reste correct en plein écran.
+
+5. Résultats
+
+Chaque scénario doit être exécuté sur Windows. Les résultats seront indiqués comme réussis ou échoués après les tests.
