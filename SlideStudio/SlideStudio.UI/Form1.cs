@@ -179,6 +179,9 @@ public partial class Form1 : Form, IMainView, ISelectionView
             {
                 RefreshElementList(selectedSlide, []);
             }
+
+            UpdateCanvasAccessibleStatus(
+                selectedSlide is null ? [] : _selectionPresenter?.Selection ?? []);
         }
         finally
         {
@@ -271,7 +274,33 @@ public partial class Form1 : Form, IMainView, ISelectionView
         {
             _updatingSelectionView = false;
         }
+        UpdateCanvasAccessibleStatus(selection);
     }
+
+    private void UpdateCanvasAccessibleStatus(IReadOnlyList<SlideElement> selection)
+    {
+        string slideStatus = _slideList.SelectedIndex < 0
+            ? "Aucune diapositive sélectionnée."
+            : $"Diapositive {_slideList.SelectedIndex + 1} sur {_slideList.Items.Count}, {(_slideList.SelectedItem as SlideListItem)?.Slide.Elements.Count ?? 0} éléments.";
+        string selectionStatus = selection.Count switch
+        {
+            0 => "Aucun élément sélectionné.",
+            1 => $"1 élément sélectionné : {DescribeElement(selection[0])}.",
+            _ => $"{selection.Count} éléments sélectionnés : {string.Join(", ", selection.Select(DescribeElement))}."
+        };
+        _slideCanvas.SetAccessibleStatus($"{slideStatus} {selectionStatus}");
+    }
+
+    private static string DescribeElement(SlideElement element) => element switch
+    {
+        TextElement text => $"zone de texte « {TruncateAccessibleText(text.Text)} »",
+        ShapeElement shape => $"forme {shape.Kind}",
+        ImageElement => "image",
+        _ => "élément"
+    };
+
+    private static string TruncateAccessibleText(string value) =>
+        value.Length <= 32 ? value : $"{value[..29]}…";
 
     /// <inheritdoc />
     public void SetSelectionActions(bool canCopy, bool canCut, bool canPaste, bool canDelete, bool canReorder)
@@ -333,6 +362,13 @@ public partial class Form1 : Form, IMainView, ISelectionView
         ApplyDarkTheme(this);
         _welcomeScreen.ActionRequested += WelcomeScreen_ActionRequested;
         _loadingScreen.Completed += LoadingScreen_Completed;
+        Shown += (_, _) =>
+        {
+            if (_welcomeScreen.Visible)
+            {
+                _welcomeScreen.Focus();
+            }
+        };
         _slideCanvas.SelectionChanged += SlideCanvas_SelectionChanged;
         _slideCanvas.FramesChangeRequested += SlideCanvas_FramesChangeRequested;
         _slideCanvas.TextChangeRequested += SlideCanvas_TextChangeRequested;
@@ -354,6 +390,7 @@ public partial class Form1 : Form, IMainView, ISelectionView
     {
         _pendingStartupAction = action;
         _loadingScreen.BringToFront();
+        _loadingScreen.Focus();
         _loadingScreen.Start();
     }
 
@@ -370,12 +407,14 @@ public partial class Form1 : Form, IMainView, ISelectionView
         {
             _loadingScreen.Hide();
             _welcomeScreen.Hide();
+            _slideCanvas.Focus();
             return;
         }
 
         _loadingScreen.Hide();
         _welcomeScreen.BringToFront();
         _welcomeScreen.Show();
+        _welcomeScreen.Focus();
     }
 
     private void SlideCanvas_SelectionChanged(object? sender, CanvasSelectionChangedEventArgs e)
@@ -761,6 +800,9 @@ public partial class Form1 : Form, IMainView, ISelectionView
 
     private void CreateStatusBar()
     {
+        _modifiedStatus.AccessibleName = "État d'enregistrement";
+        _slidePositionStatus.AccessibleName = "Position de la diapositive";
+        _selectionStatus.AccessibleName = "État de la sélection";
         _statusStrip.Items.Add(_modifiedStatus);
         ToolStripStatusLabel spacer = new() { Spring = true };
         _statusStrip.Items.Add(spacer);
