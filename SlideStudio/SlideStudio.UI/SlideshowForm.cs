@@ -1,88 +1,351 @@
 
+using System;
+using System.Collections.Generic;
+using System.Drawing;
+using System.Windows.Forms;
+using SlideStudio.Core;
+using SlideStudio.Core.Model;
+using SlideStudio.UI.Canvas;
+
+namespace SlideStudio.UI;
+
 /// <summary>
-/// Gère les commandes clavier pendant la présentation.
+/// Affiche une présentation en plein écran avec navigation au clavier.
 /// </summary>
-private void SlideshowForm_KeyDown(object? sender, KeyEventArgs e)
+public class SlideshowForm : Form
 {
-    // Identifier la commande correspondant à la touche pressée.
-    SlideshowCommand command = SlideshowKeyboard.GetCommand(e.KeyCode);
+    private readonly List<Image> _slides;
 
-    // Traiter la commande demandée.
-    switch (command)
+    private readonly Slide[]? _presentationSlides;
+
+    private readonly SlideRenderer? _renderer;
+
+    private readonly PictureBox _pictureBox;
+
+    private readonly Label _slideCounterLabel;
+
+    private int _currentIndex;
+
+    private bool _blackScreen;
+
+    private Bitmap? _renderedSlide;
+
+    /// <summary>
+    /// Crée un diaporama à partir d'une collection d'images.
+    /// Les images sont copiées et libérées avec la fenêtre.
+    /// </summary>
+    public SlideshowForm(IEnumerable<Image> slides)
     {
-        case SlideshowCommand.Exit:
+        ArgumentNullException.ThrowIfNull(slides);
+
+        _slides = [];
+
+        foreach (Image slide in slides)
         {
-            // Fermer la fenêtre du diaporama.
-            Close();
-            break;
+            ArgumentNullException.ThrowIfNull(slide);
+            _slides.Add(new Bitmap(slide));
         }
 
-        case SlideshowCommand.ToggleBlackScreen:
+        if (_slides.Count == 0)
         {
-            // Activer ou désactiver l'écran noir.
-            _blackScreen = !_blackScreen;
-
-            // Masquer ou afficher la diapositive.
-            _pictureBox.Visible = !_blackScreen;
-            break;
+            throw new ArgumentException(
+                "Le diaporama doit contenir au moins une image.",
+                nameof(slides));
         }
 
-        case SlideshowCommand.Next:
+        _pictureBox = CreatePictureBox();
+        _slideCounterLabel = CreateSlideCounter();
+
+        InitializeWindow();
+
+        Controls.Add(_pictureBox);
+        Controls.Add(_slideCounterLabel);
+
+        _slideCounterLabel.BringToFront();
+
+        ShowSlide();
+    }
+
+    /// <summary>
+    /// Crée un diaporama directement depuis une présentation
+    /// et ses médias embarqués.
+    /// </summary>
+    public SlideshowForm(
+        IReadOnlyList<Slide> slides,
+        MediaStore mediaStore)
+    {
+        ArgumentNullException.ThrowIfNull(slides);
+        ArgumentNullException.ThrowIfNull(mediaStore);
+
+        if (slides.Count == 0)
         {
-            // Ne pas changer de diapositive pendant l'écran noir.
-            if (_blackScreen)
-            {
-                break;
-            }
-
-            // Déterminer le nombre total de diapositives.
-            int slideCount = _presentationSlides?.Length ?? _slides.Count;
-
-            // Vérifier qu'il existe une diapositive suivante.
-            if (_currentIndex < slideCount - 1)
-            {
-                _currentIndex++;
-
-                // Afficher la nouvelle diapositive.
-                ShowSlide();
-            }
-
-            break;
+            throw new ArgumentException(
+                "Le diaporama doit contenir au moins une diapositive.",
+                nameof(slides));
         }
 
-        case SlideshowCommand.Previous:
+        _slides = [];
+        _presentationSlides = slides.ToArray();
+
+        _renderer = new SlideRenderer();
+        _renderer.SetMediaStore(mediaStore);
+
+        _pictureBox = CreatePictureBox();
+        _slideCounterLabel = CreateSlideCounter();
+
+        InitializeWindow();
+
+        Controls.Add(_pictureBox);
+        Controls.Add(_slideCounterLabel);
+
+        _slideCounterLabel.BringToFront();
+
+        try
         {
-            // Ne pas changer de diapositive pendant l'écran noir.
-            if (_blackScreen)
-            {
-                break;
-            }
-
-            // Vérifier qu'il existe une diapositive précédente.
-            if (_currentIndex > 0)
-            {
-                _currentIndex--;
-
-                // Afficher la diapositive précédente.
-                ShowSlide();
-            }
-
-            break;
+            ShowSlide();
         }
-
-        case SlideshowCommand.None:
-        default:
+        catch
         {
-            // Ne rien faire pour les touches non reconnues.
-            break;
+            _renderer.Dispose();
+            _pictureBox.Dispose();
+            _slideCounterLabel.Dispose();
+            throw;
         }
     }
 
-    // Empêcher le traitement supplémentaire des commandes reconnues.
-    if (command != SlideshowCommand.None)
+    /// <summary>
+    /// Crée la zone d'affichage des diapositives.
+    /// </summary>
+    private static PictureBox CreatePictureBox()
     {
-        e.Handled = true;
-        e.SuppressKeyPress = true;
+        return new PictureBox
+        {
+            Dock = DockStyle.Fill,
+            SizeMode = PictureBoxSizeMode.Zoom,
+            BackColor = Color.Black
+        };
+    }
+
+    /// <summary>
+    /// Crée le compteur de diapositives.
+    /// </summary>
+    private static Label CreateSlideCounter()
+    {
+        return new Label
+        {
+            AutoSize = true,
+            ForeColor = Color.White,
+            BackColor = Color.FromArgb(45, 45, 45),
+            Font = new Font(
+                "Segoe UI",
+                12,
+                FontStyle.Bold),
+            Padding = new Padding(12, 8, 12, 8),
+            Anchor = AnchorStyles.Bottom | AnchorStyles.Right
+        };
+    }
+
+    /// <summary>
+    /// Initialise les paramètres de la fenêtre.
+    /// </summary>
+    private void InitializeWindow()
+    {
+        Text = "SlideStudio - Diaporama";
+
+        WindowState = FormWindowState.Maximized;
+
+        FormBorderStyle = FormBorderStyle.None;
+
+        BackColor = Color.Black;
+
+        KeyPreview = true;
+
+        KeyDown += SlideshowForm_KeyDown;
+
+        Resize += SlideshowForm_Resize;
+    }
+
+    /// <summary>
+    /// Libère les ressources utilisées par le diaporama.
+    /// </summary>
+    protected override void Dispose(bool disposing)
+    {
+        if (disposing)
+        {
+            _pictureBox.Image = null;
+
+            _renderedSlide?.Dispose();
+
+            _renderer?.Dispose();
+
+            foreach (Image slide in _slides)
+            {
+                slide.Dispose();
+            }
+
+            _slideCounterLabel.Dispose();
+        }
+
+        base.Dispose(disposing);
+    }
+
+    /// <summary>
+    /// Affiche la diapositive actuellement sélectionnée.
+    /// </summary>
+    private void ShowSlide()
+    {
+        if (_presentationSlides is not null &&
+            _renderer is not null)
+        {
+            Bitmap renderedSlide = _renderer.Render(
+                _presentationSlides[_currentIndex],
+                new Size(
+                    (int)Presentation.SlideWidth,
+                    (int)Presentation.SlideHeight));
+
+            Bitmap? previousSlide = _renderedSlide;
+
+            _renderedSlide = renderedSlide;
+
+            _pictureBox.Image = renderedSlide;
+
+            previousSlide?.Dispose();
+        }
+        else if (_slides.Count > 0)
+        {
+            _pictureBox.Image = _slides[_currentIndex];
+        }
+
+        // Réinitialiser l'écran noir.
+        _blackScreen = false;
+
+        _pictureBox.Visible = true;
+
+        // Calculer le nombre total de diapositives.
+        int totalSlides =
+            _presentationSlides?.Length ?? _slides.Count;
+
+        // Actualiser le compteur.
+        _slideCounterLabel.Text =
+            $"Diapositive {_currentIndex + 1} / {totalSlides}";
+
+        // Afficher le compteur.
+        _slideCounterLabel.Visible = true;
+
+        // Repositionner le compteur.
+        PositionSlideCounter();
+
+        _slideCounterLabel.BringToFront();
+    }
+
+    /// <summary>
+    /// Positionne le compteur en bas à droite de la fenêtre.
+    /// </summary>
+    private void PositionSlideCounter()
+    {
+        int x = Math.Max(
+            0,
+            ClientSize.Width - _slideCounterLabel.Width - 25);
+
+        int y = Math.Max(
+            0,
+            ClientSize.Height - _slideCounterLabel.Height - 25);
+
+        _slideCounterLabel.Location = new Point(x, y);
+    }
+
+    /// <summary>
+    /// Met à jour la position du compteur lors du redimensionnement.
+    /// </summary>
+    private void SlideshowForm_Resize(object? sender, EventArgs e)
+    {
+        PositionSlideCounter();
+    }
+
+    /// <summary>
+    /// Gère les commandes clavier du diaporama.
+    /// </summary>
+    private void SlideshowForm_KeyDown(
+        object? sender,
+        KeyEventArgs e)
+    {
+        SlideshowCommand command =
+            SlideshowKeyboard.GetCommand(e.KeyCode);
+
+        switch (command)
+        {
+            case SlideshowCommand.Exit:
+            {
+                // Quitter la présentation.
+                Close();
+                break;
+            }
+
+            case SlideshowCommand.ToggleBlackScreen:
+            {
+                // Activer ou désactiver l'écran noir.
+                _blackScreen = !_blackScreen;
+
+                _pictureBox.Visible = !_blackScreen;
+                _slideCounterLabel.Visible = !_blackScreen;
+
+                break;
+            }
+
+            case SlideshowCommand.Next:
+            {
+                // Ne pas naviguer pendant l'écran noir.
+                if (_blackScreen)
+                {
+                    break;
+                }
+
+                int slideCount =
+                    _presentationSlides?.Length ?? _slides.Count;
+
+                // Vérifier qu'une diapositive suivante existe.
+                if (_currentIndex < slideCount - 1)
+                {
+                    _currentIndex++;
+
+                    ShowSlide();
+                }
+
+                break;
+            }
+
+            case SlideshowCommand.Previous:
+            {
+                // Ne pas naviguer pendant l'écran noir.
+                if (_blackScreen)
+                {
+                    break;
+                }
+
+                // Vérifier qu'une diapositive précédente existe.
+                if (_currentIndex > 0)
+                {
+                    _currentIndex--;
+
+                    ShowSlide();
+                }
+
+                break;
+            }
+
+            case SlideshowCommand.None:
+            default:
+            {
+                // Aucune action pour les touches inconnues.
+                break;
+            }
+        }
+
+        // Éviter le traitement supplémentaire des touches reconnues.
+        if (command != SlideshowCommand.None)
+        {
+            e.Handled = true;
+            e.SuppressKeyPress = true;
+        }
     }
 }
-
