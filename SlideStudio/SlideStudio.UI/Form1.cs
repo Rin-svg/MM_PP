@@ -617,10 +617,19 @@ public partial class Form1 : Form, IMainView, ISelectionView
         _toolStrip.Height = 42;
         _toolStrip.Padding = new Padding(10, 4, 10, 4);
         _toolStrip.GripStyle = ToolStripGripStyle.Hidden;
-        _toolStrip.Items.Add(CreateToolButton("Nouveau", (_, _) => _presenter.New()));
-        _toolStrip.Items.Add(CreateToolButton("Ouvrir", (_, _) => _presenter.Open()));
+        _toolStrip.AccessibleRole = AccessibleRole.ToolBar;
+        _toolStrip.AccessibleName = "Barre d'outils";
+        _toolStrip.AccessibleDescription = "Commandes de document, de diapositive, d'insertion et de zoom.";
+        ToolStripButton newButton = CreateToolButton("Nouveau", (_, _) => _presenter.New());
+        newButton.AccessibleDescription = "Créer une nouvelle présentation.";
+        _toolStrip.Items.Add(newButton);
+        ToolStripButton openButton = CreateToolButton("Ouvrir", (_, _) => _presenter.Open());
+        openButton.AccessibleDescription = "Ouvrir une présentation existante.";
+        _toolStrip.Items.Add(openButton);
         _saveButton.Click += (_, _) => _presenter.Save();
         _saveButton.DisplayStyle = ToolStripItemDisplayStyle.Text;
+        _saveButton.AccessibleName = "Enregistrer";
+        _saveButton.AccessibleDescription = "Enregistrer les modifications de la présentation.";
         _saveButton.BackColor = AccentColor;
         _saveButton.ForeColor = AccentTextColor;
         _saveButton.Margin = new Padding(6, 1, 8, 1);
@@ -628,27 +637,39 @@ public partial class Form1 : Form, IMainView, ISelectionView
         _toolStrip.Items.Add(_saveButton);
         _toolStrip.Items.Add(new ToolStripSeparator());
         _undoButton.Click += (_, _) => _presenter.Undo();
+        _undoButton.AccessibleDescription = "Annuler la dernière modification.";
         _toolStrip.Items.Add(_undoButton);
         _redoButton.Click += (_, _) => _presenter.Redo();
+        _redoButton.AccessibleDescription = "Rétablir la dernière modification annulée.";
         _toolStrip.Items.Add(_redoButton);
         _toolStrip.Items.Add(new ToolStripSeparator());
         _addSlideButton.Text = "Nouvelle diapositive";
+        _addSlideButton.AccessibleName = "Nouvelle diapositive";
+        _addSlideButton.AccessibleDescription = "Ajouter une diapositive à la présentation.";
         _addSlideButton.AutoSize = false;
         _addSlideButton.Size = new Size(154, 30);
         _addSlideButton.Click += (_, _) => _presenter.AddSlide();
         _toolStrip.Items.Add(new ToolStripControlHost(_addSlideButton));
         _duplicateSlideButton.Text = "Dupliquer";
+        _duplicateSlideButton.AccessibleName = "Dupliquer la diapositive";
+        _duplicateSlideButton.AccessibleDescription = "Créer une copie de la diapositive sélectionnée.";
         _duplicateSlideButton.AutoSize = false;
         _duplicateSlideButton.Size = new Size(100, 30);
         _duplicateSlideButton.Click += (_, _) => _presenter.DuplicateSelectedSlide();
         _toolStrip.Items.Add(new ToolStripControlHost(_duplicateSlideButton));
         _deleteSlideButton.Text = "Supprimer";
+        _deleteSlideButton.AccessibleName = "Supprimer la diapositive";
+        _deleteSlideButton.AccessibleDescription = "Supprimer la diapositive sélectionnée.";
         _deleteSlideButton.AutoSize = false;
         _deleteSlideButton.Size = new Size(96, 30);
         _deleteSlideButton.Click += (_, _) => _presenter.DeleteSelectedSlide();
         _toolStrip.Items.Add(new ToolStripControlHost(_deleteSlideButton));
         _toolStrip.Items.Add(new ToolStripSeparator());
-        ToolStripDropDownButton insertButton = new("Insérer");
+        ToolStripDropDownButton insertButton = new("Insérer")
+        {
+            AccessibleName = "Insérer un élément",
+            AccessibleDescription = "Ajouter une zone de texte, une forme ou une image à la diapositive."
+        };
         insertButton.DropDownItems.Add("Zone de texte", null, (_, _) => InsertCanvasElement(
             new TextElement(new ElementFrame(340, 280, 600, 140), "Double-cliquez pour modifier")));
         insertButton.DropDownItems.Add("Rectangle", null, (_, _) => InsertCanvasElement(
@@ -663,7 +684,8 @@ public partial class Form1 : Form, IMainView, ISelectionView
         ToolStripButton zoomOut = new("−")
         {
             ToolTipText = "Réduire le zoom du canevas",
-            AccessibleName = "Réduire le zoom du canevas"
+            AccessibleName = "Réduire le zoom du canevas",
+            AccessibleDescription = "Réduire l'agrandissement de la diapositive."
         };
         zoomOut.Click += (_, _) => _slideCanvas.ZoomBy(1 / 1.1f);
         _toolStrip.Items.Add(zoomOut);
@@ -673,19 +695,24 @@ public partial class Form1 : Form, IMainView, ISelectionView
         ToolStripButton zoomIn = new("+")
         {
             ToolTipText = "Agrandir le zoom du canevas",
-            AccessibleName = "Agrandir le zoom du canevas"
+            AccessibleName = "Agrandir le zoom du canevas",
+            AccessibleDescription = "Augmenter l'agrandissement de la diapositive."
         };
         zoomIn.Click += (_, _) => _slideCanvas.ZoomBy(1.1f);
         _toolStrip.Items.Add(zoomIn);
         ToolStripButton resetZoom = new("Ajuster")
         {
             ToolTipText = "Ajuster la diapositive à la zone de travail",
-            AccessibleName = "Ajuster la diapositive à la zone de travail"
+            AccessibleName = "Ajuster la diapositive à la zone de travail",
+            AccessibleDescription = "Rétablir le zoom adapté à la zone de travail."
         };
         resetZoom.Click += (_, _) => _slideCanvas.ResetZoom();
         _toolStrip.Items.Add(resetZoom);
         _toolStrip.Items.Add(new ToolStripSeparator());
-        _toolStrip.Items.Add(CreateToolButton("Diaporama", StartPresentationSlideshow));
+        _toolStrip.Items.Add(CreateToolButton(
+            "Diaporama",
+            StartPresentationSlideshow,
+            "Lancer le diaporama. Raccourci : F5."));
         _topPanel.Controls.Add(_toolStrip);
     }
 
@@ -1807,11 +1834,16 @@ public partial class Form1 : Form, IMainView, ISelectionView
         return item;
     }
 
-    private static ToolStripButton CreateToolButton(string text, EventHandler handler)
+    private static ToolStripButton CreateToolButton(
+        string text,
+        EventHandler handler,
+        string? accessibleDescription = null)
     {
         ToolStripButton button = new(text)
         {
             DisplayStyle = ToolStripItemDisplayStyle.Text,
+            AccessibleName = text,
+            AccessibleDescription = accessibleDescription ?? text,
             Margin = new Padding(3, 1, 3, 1),
             Padding = new Padding(8, 4, 8, 4)
         };

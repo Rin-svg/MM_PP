@@ -2,7 +2,7 @@
 
 Projet de cours réalisé en **équipe de 5** : une application de présentation « type PowerPoint », écrite en C# avec une interface WinForms.
 
-**État actuel : M1 à M6 sont fusionnés dans `main`; M7 (design, accessibilité et qualité) est en cours.** Le modèle, la validation et l'historique du Core sont couverts par 217 tests; les Presenters par 12 tests; le stockage `.slds` par 12 tests et l'UI par 28 tests. Les médias sont embarqués dans `media/` et validés avant décodage (format, taille et dimensions). La fenêtre M4 est reliée aux Presenters : documents, diapositives, menu contextuel, état du document et propriétés du texte et des formes via la liste des éléments. L'interface adopte un thème sombre bleu-nuit à accents orange, des panneaux arrondis et des boutons animés au survol et au clic; les combinaisons de texte et de fonds du thème, y compris les cartes d'accueil survolées, sont testées pour un contraste d'au moins 4,5:1. L'écran d'accueil propose la création ou l'ouverture d'une présentation, avec une transition de chargement animée et des illustrations en perspective. La sélection multiple, le copier/couper/coller, la duplication, la suppression et l'ordre de superposition sont accessibles par le menu Édition et le menu contextuel. Le panneau applique la mise en forme à toutes les zones de texte sélectionnées, montre les valeurs mixtes pour gras/italique et synchronise les changements avec l'historique. Le `SlideRenderer` dessine texte, formes et images à plusieurs échelles; le `SlideCanvas` affiche le rendu, prend en charge le zoom ancré à la souris, le déplacement de la vue, la sélection multiple, la rotation, le déplacement et le redimensionnement avec annulation groupée du geste. Le diaporama, l'export PNG/PDF et les miniatures partagent le renderer; les miniatures utilisent un cache LRU borné à 24 Mo, adapté aux présentations jusqu'à 500 diapositives.
+**État actuel : M1 à M6 sont fusionnés dans `main`; M7 (design, accessibilité et qualité) est en cours.** Le modèle, la validation et l'historique du Core sont couverts par 217 tests; les Presenters par 12 tests; le stockage `.slds` par 12 tests et l'UI par 31 tests. Les médias sont embarqués dans `media/` et validés avant décodage (format, taille et dimensions). La fenêtre M4 est reliée aux Presenters : documents, diapositives, menu contextuel, état du document et propriétés du texte et des formes via la liste des éléments. L'interface adopte un thème sombre bleu-nuit à accents orange, des panneaux arrondis et des boutons animés au survol et au clic; les combinaisons de texte et de fonds du thème, y compris les cartes d'accueil survolées, sont testées pour un contraste d'au moins 4,5:1. Les commandes de la barre d'outils ont des noms et descriptions accessibles; l'accueil, le chargement et le canevas exposent leur état aux lecteurs d'écran. L'écran d'accueil propose la création ou l'ouverture d'une présentation, avec une transition de chargement animée et des illustrations en perspective. La sélection multiple, le copier/couper/coller, la duplication, la suppression et l'ordre de superposition sont accessibles par le menu Édition et le menu contextuel. Le panneau applique la mise en forme à toutes les zones de texte sélectionnées, montre les valeurs mixtes pour gras/italique et synchronise les changements avec l'historique. Le `SlideRenderer` dessine texte, formes et images à plusieurs échelles; le `SlideCanvas` affiche le rendu, prend en charge le zoom ancré à la souris, le déplacement de la vue, la sélection multiple, la rotation, le déplacement et le redimensionnement avec annulation groupée du geste. Le diaporama, l'export PNG/PDF et les miniatures partagent le renderer; les miniatures utilisent un cache LRU borné à 24 Mo, adapté aux présentations jusqu'à 500 diapositives.
 
 ## Démarrage rapide
 
@@ -39,7 +39,7 @@ Les dépendances vont dans un seul sens : **UI → Presenters → Core ← Infra
 | `SlideStudio.Infrastructure` (`SlideStudio/SlideStudio.Infrastructure`) | net10.0 | Archive `.slds`, sérialisation JSON, écriture atomique avec copie de secours, lecture des présentations. | **M2 ✔** | Membre 1 |
 | `SlideStudio.Presenters` (`src/SlideStudio.Presenters`) | net10.0 | Logique de chaque écran (patron MVP), testable sans fenêtre. | **M3 ✔** | Membre 2 |
 | `SlideStudio.UI` (`SlideStudio/SlideStudio.UI`) | net10.0-windows | Interface WinForms; fenêtre principale connectée aux opérations M3, panneau de propriétés, rendu partagé et canevas interactif. | **M4 ✔, M5 ✔** | Membres 3 et 4 |
-| Diaporama, export, design, qualité | UI + documentation | Diaporama, exports PNG/PDF, thème, accessibilité, scénarios de validation et CI. | **M6 ✔**, M7 (en cours) | Membre 5 |
+| Diaporama, export, design, qualité | UI + documentation | Diaporama, exports PNG/PDF, thème, accessibilité, scénarios de validation et CI. | **M6 ✔**, M7 (validation manuelle finale à faire) | Membre 5 |
 
 ## L'équipe et la répartition des tâches
 
@@ -88,8 +88,8 @@ Chaque tâche ci-dessous devient une **Issue GitHub** (une par ligne de liste), 
 ### Membre 5 — Diaporama, design et qualité (jalons M6 et M7, et transversal)
 - Mode diaporama plein écran (flèches, Échap, écran noir), branché à la présentation courante via F5; le lancement depuis des fichiers image reste également disponible.
 - Export des diapositives en images PNG : **implémenté**; export PDF : **implémenté**.
-- Design : palette, thèmes de diapositives, icônes et cohérence visuelle; contraste des boutons d'action et des menus vérifié (≥ 4,5:1), audit du contraste des autres contenus à poursuivre; accessibilité (clavier et lecteur d'écran).
-- Qualité : dérouler une liste de scénarios à risque (double-clic sur Enregistrer, fichier verrouillé, fermeture sans enregistrer…) avant chaque grande fusion ; mettre en place la CI (compilation + tests à chaque PR) ; tenir à jour ce README et les schémas d'architecture ; préparer la démonstration finale.
+- Design et accessibilité : contraste ≥ 4,5:1 vérifié automatiquement pour les combinaisons de texte et de surface de l'interface; commandes nommées, navigation clavier et annonces du lecteur d'écran implémentées. Le contraste des contenus personnalisés des diapositives dépend des couleurs choisies par l'utilisateur.
+- Qualité : CI de compilation et tests configurée pour chaque PR; suites Core, Presenters, Infrastructure et UI réussies localement. Scénarios de risques, navigation clavier/lecteur d'écran et test DPI multi-écran restent à vérifier manuellement; répéter la démonstration finale avec le parcours documenté.
 - *Dépend de :* `SlideRenderer` du membre 4.
 
 ### Pistes produit à planifier après les jalons actuels
@@ -112,9 +112,7 @@ Ces idées sont inspirées des références UI/UX partagées. Elles ne font pas 
 
 3. **M1, M2 et M3 sont intégrés dans `main`.** Le stockage embarque les médias, et `MainPresenter` utilise le contrat de paquet pour ouvrir et enregistrer.
 4. **M4, M5 et M6 sont intégrés dans `main`.** Le renderer partagé sert le canevas, les miniatures, le diaporama et les exports PNG/PDF; le cache des miniatures est validé avec 500 diapositives.
-5. **Finitions M7.** Vérifier l'accessibilité clavier et lecteur d'écran, le contraste des textes, l'échelle d'affichage, les scénarios à risque et la démonstration.
-6. **Intégration.** Le membre 3 assemble les couches ; le membre 5 déroule les scénarios de test ; tout le monde corrige son périmètre.
-7. **Finitions et rendu (M7, en cours).** Thèmes, accessibilité clavier et lecteur d'écran, échelle d'affichage, documentation, scénarios de validation et démonstration.
+5. **Finitions M7.** Exécuter les vérifications manuelles du lecteur d'écran et du clavier, tester le DPI sur plusieurs écrans, dérouler les scénarios de risque et répéter la démonstration finale.
 
 ## Travailler avec git (résumé)
 
