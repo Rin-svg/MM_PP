@@ -1,0 +1,35 @@
+
+using System.Windows.Forms;
+
+namespace SlideStudio.UI;
+
+/// <summary>
+/// Identifie les commandes clavier du diaporama.
+/// </summary>
+public enum SlideshowCommand
+{
+    None,
+    Next,
+    Previous,
+    Exit,
+    ToggleBlackScreen
+}
+
+/// <summary>
+/// Convertit les touches du clavier en commandes.
+/// </summary>
+public static class SlideshowKeyboard
+{
+    public static SlideshowCommand GetCommand(Keys key)
+    {
+        return key switch
+        {
+            Keys.Right => SlideshowCommand.Next,
+            Keys.Space => SlideshowCommand.Next,
+            Keys.Left => SlideshowCommand.Previous,
+            Keys.Escape => SlideshowCommand.Exit,
+            Keys.B => SlideshowCommand.ToggleBlackScreen,
+            _ => SlideshowCommand.None
+        };
+    }
+}
