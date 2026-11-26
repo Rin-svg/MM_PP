@@ -93,6 +93,7 @@ public partial class Form1 : Form, IMainView, ISelectionView
         _slideCanvas = new SlideCanvas(_slideRenderer);
         _thumbnailCache = new ThumbnailCache(_slideRenderer);
         InitializeComponent();
+        Font = new Font(UiPalette.TextFontFamily, 9.5f, FontStyle.Regular);
         BuildInterface();
         _presenter = new MainPresenter(this, new WinFormsDialogService(this), new SldsDocumentStorage());
         if (_presenter.SelectedSlide is { } slide)
@@ -741,7 +742,7 @@ public partial class Form1 : Form, IMainView, ISelectionView
         _documentHeaderTitle.Size = new Size(360, 26);
         _documentHeaderTitle.AutoEllipsis = true;
         _documentHeaderTitle.Text = "Présentation sans titre";
-        _documentHeaderTitle.Font = new Font("Segoe UI Semibold", 10, FontStyle.Bold);
+        _documentHeaderTitle.Font = new Font(UiPalette.DisplayFontFamily, 10, FontStyle.Bold);
         _documentHeaderTitle.ForeColor = PrimaryTextColor;
         _documentHeaderTitle.Margin = new Padding(0, 4, 8, 0);
         Label separator = new()
@@ -754,7 +755,7 @@ public partial class Form1 : Form, IMainView, ISelectionView
         _documentHeaderSubtitle.AutoSize = true;
         _documentHeaderSubtitle.Text = "Présentation SlideStudio";
         _documentHeaderSubtitle.ForeColor = MutedTextColor;
-        _documentHeaderSubtitle.Font = new Font("Segoe UI", 9, FontStyle.Regular);
+        _documentHeaderSubtitle.Font = new Font(UiPalette.TextFontFamily, 9, FontStyle.Regular);
         _documentHeaderSubtitle.Margin = new Padding(0, 5, 0, 0);
 
         contents.Controls.Add(_brandMark);
@@ -1000,7 +1001,7 @@ public partial class Form1 : Form, IMainView, ISelectionView
         Label propertiesHeader = new()
         {
             Text = "Propriétés",
-            Font = new Font("Segoe UI", 12, FontStyle.Bold),
+            Font = new Font(UiPalette.DisplayFontFamily, 12, FontStyle.Bold),
             AutoSize = true,
             Dock = DockStyle.Top
         };

@@ -2,6 +2,9 @@ namespace SlideStudio.UI;
 
 internal static class UiPalette
 {
+    internal const string TextFontFamily = "Segoe UI Variable";
+    internal const string DisplayFontFamily = "Segoe Script";
+
     internal static readonly Color Window = Color.FromArgb(15, 17, 26);
     internal static readonly Color Panel = Color.FromArgb(25, 29, 42);
     internal static readonly Color Elevated = Color.FromArgb(34, 39, 55);

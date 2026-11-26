@@ -70,6 +70,17 @@ public sealed class SlideRendererTests
     }
 
     [Fact]
+    public void WelcomeScreen_TreatsArrowKeysAsInputForCarouselNavigation()
+    {
+        Assert.True(WelcomeScreen.IsCarouselNavigationKey(System.Windows.Forms.Keys.Left));
+        Assert.True(WelcomeScreen.IsCarouselNavigationKey(System.Windows.Forms.Keys.Right));
+        Assert.True(WelcomeScreen.IsCarouselNavigationKey(
+            System.Windows.Forms.Keys.Shift | System.Windows.Forms.Keys.Left));
+        Assert.False(WelcomeScreen.IsCarouselNavigationKey(System.Windows.Forms.Keys.Enter));
+        Assert.False(WelcomeScreen.IsCarouselNavigationKey(System.Windows.Forms.Keys.Tab));
+    }
+
+    [Fact]
     public void LoadingScreen_ExposesProgressStateAndAnnouncesLoading()
     {
         using LoadingScreen loadingScreen = new();
