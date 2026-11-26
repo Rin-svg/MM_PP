@@ -4,7 +4,7 @@ using System.Windows.Forms;
 namespace SlideStudio.UI;
 
 /// <summary>
-/// Identifie les commandes clavier du diaporama.
+/// Représente les commandes disponibles pendant le diaporama.
 /// </summary>
 public enum SlideshowCommand
 {
@@ -12,24 +12,40 @@ public enum SlideshowCommand
     Next,
     Previous,
     Exit,
-    ToggleBlackScreen
+    ToggleBlackScreen,
+    ShowHelp
 }
 
 /// <summary>
-/// Convertit les touches du clavier en commandes.
+/// Associe les touches du clavier aux commandes du diaporama.
 /// </summary>
 public static class SlideshowKeyboard
 {
+    /// <summary>
+    /// Identifie la commande correspondant à une touche pressée.
+    /// </summary>
     public static SlideshowCommand GetCommand(Keys key)
     {
-        return key switch
+        switch (key)
         {
-            Keys.Right => SlideshowCommand.Next,
-            Keys.Space => SlideshowCommand.Next,
-            Keys.Left => SlideshowCommand.Previous,
-            Keys.Escape => SlideshowCommand.Exit,
-            Keys.B => SlideshowCommand.ToggleBlackScreen,
-            _ => SlideshowCommand.None
-        };
+            case Keys.Right:
+            case Keys.Space:
+                return SlideshowCommand.Next;
+
+            case Keys.Left:
+                return SlideshowCommand.Previous;
+
+            case Keys.Escape:
+                return SlideshowCommand.Exit;
+
+            case Keys.B:
+                return SlideshowCommand.ToggleBlackScreen;
+
+            case Keys.F1:
+                return SlideshowCommand.ShowHelp;
+
+            default:
+                return SlideshowCommand.None;
+        }
     }
 }
