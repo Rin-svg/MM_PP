@@ -1,0 +1,22 @@
+# Plan qualité - SlideStudio
+
+## Objectifs
+- Garantir la stabilité de l'application.
+- Vérifier le bon fonctionnement des fonctionnalités.
+- Faciliter la maintenance du projet.
+
+## Vérifications
+- Tester la création et l'ouverture des présentations.
+- Tester l'enregistrement des fichiers.
+- Vérifier les raccourcis clavier.
+- Tester le diaporama.
+- Vérifier l'exportation en PNG et PDF.
+- Contrôler les messages d'erreur.
+
+## Accessibilité
+- Vérifier la navigation au clavier.
+- Assurer un contraste suffisant entre le texte et le fond.
+- Utiliser des intitulés clairs pour les boutons.
+
+## Validation
+Les tests doivent être exécutés avant la fusion d'une modification dans la branche principale.
