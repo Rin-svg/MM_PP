@@ -35,6 +35,55 @@ public sealed class SlideRendererTests
     }
 
     [Fact]
+    public void Canvas_AccessibleStatusKeepsKeyboardHelpAndCurrentSelection()
+    {
+        using SlideRenderer renderer = new();
+        using SlideCanvas canvas = new(renderer);
+
+        canvas.SetAccessibleStatus("Diapositive 2 sur 4. 1 élément sélectionné : zone de texte « Titre ».");
+
+        Assert.Contains("Diapositive 2 sur 4", canvas.AccessibleDescription);
+        Assert.Contains("zone de texte « Titre »", canvas.AccessibleDescription);
+        Assert.Contains("Ctrl+A", canvas.AccessibleDescription);
+        Assert.Contains("Échap", canvas.AccessibleDescription);
+    }
+
+    [Fact]
+    public void WelcomeScreen_AnnouncesSelectedActionAndEnterActivatesIt()
+    {
+        using WelcomeScreen welcomeScreen = new();
+        StartupAction? requestedAction = null;
+        welcomeScreen.ActionRequested += (_, action) => requestedAction = action;
+
+        Assert.Contains("Créer une présentation", welcomeScreen.AccessibleDescription);
+        Assert.True(welcomeScreen.HandleNavigationKey(System.Windows.Forms.Keys.Enter));
+        Assert.Equal(StartupAction.NewPresentation, requestedAction);
+
+        requestedAction = null;
+        Assert.True(welcomeScreen.HandleNavigationKey(System.Windows.Forms.Keys.Right));
+        Assert.Contains("Ouvrir un projet", welcomeScreen.AccessibleDescription);
+        Assert.True(welcomeScreen.HandleNavigationKey(System.Windows.Forms.Keys.Enter));
+
+        Assert.Equal(StartupAction.OpenPresentation, requestedAction);
+        Assert.True(welcomeScreen.TabStop);
+        Assert.Equal(System.Windows.Forms.AccessibleRole.Pane, welcomeScreen.AccessibleRole);
+    }
+
+    [Fact]
+    public void LoadingScreen_ExposesProgressStateAndAnnouncesLoading()
+    {
+        using LoadingScreen loadingScreen = new();
+
+        Assert.True(loadingScreen.TabStop);
+        Assert.Equal(System.Windows.Forms.AccessibleRole.ProgressBar, loadingScreen.AccessibleRole);
+        Assert.Equal("Préparation de votre espace", loadingScreen.AccessibleName);
+
+        loadingScreen.Start();
+
+        Assert.Contains("Chargement en cours : 0 %", loadingScreen.AccessibleDescription);
+    }
+
+    [Fact]
     public void Render_DrawsShapeAndTextAtAnyScale()
     {
         Slide slide = new();

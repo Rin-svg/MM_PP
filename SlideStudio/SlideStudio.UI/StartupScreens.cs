@@ -48,7 +48,8 @@ internal sealed class WelcomeScreen : UserControl
         ForeColor = PrimaryTextColor;
         TabStop = true;
         AccessibleRole = AccessibleRole.Pane;
-        AccessibleName = "Accueil SlideStudio. Choisissez créer une présentation ou ouvrir un projet.";
+        AccessibleName = "Accueil SlideStudio";
+        UpdateAccessibleStatus();
         SetStyle(
             ControlStyles.UserPaint
                 | ControlStyles.AllPaintingInWmPaint
@@ -171,6 +172,17 @@ internal sealed class WelcomeScreen : UserControl
         }
     }
 
+    protected override void OnGotFocus(EventArgs e)
+    {
+        base.OnGotFocus(e);
+        if (_focusedCard < 0)
+        {
+            _focusedCard = _selectedCard;
+        }
+        UpdateAccessibleStatus();
+        Invalidate();
+    }
+
     protected override void OnMouseUp(MouseEventArgs e)
     {
         int releasedCard = GetCardAt(e.Location);
@@ -196,18 +208,30 @@ internal sealed class WelcomeScreen : UserControl
     protected override void OnKeyDown(KeyEventArgs e)
     {
         base.OnKeyDown(e);
-        if (e.KeyCode is Keys.Left or Keys.Right)
+        if (HandleNavigationKey(e.KeyCode))
+        {
+            e.Handled = true;
+        }
+    }
+
+    internal bool HandleNavigationKey(Keys key)
+    {
+        if (key is Keys.Left or Keys.Right)
         {
             SelectCard(_selectedCard == 0 ? 1 : 0, activateAfterTransition: false);
-            e.Handled = true;
+            return true;
         }
-        else if (e.KeyCode is Keys.Enter or Keys.Space)
+
+        if (key is Keys.Enter or Keys.Space)
         {
-            ActionRequested?.Invoke(this, _focusedCard == 0
+            int card = _focusedCard >= 0 ? _focusedCard : _selectedCard;
+            ActionRequested?.Invoke(this, card == 0
                 ? StartupAction.NewPresentation
                 : StartupAction.OpenPresentation);
-            e.Handled = true;
+            return true;
         }
+
+        return false;
     }
 
     protected override void OnMouseWheel(MouseEventArgs e)
@@ -233,7 +257,27 @@ internal sealed class WelcomeScreen : UserControl
                 ? StartupAction.NewPresentation
                 : StartupAction.OpenPresentation);
         }
+        UpdateAccessibleStatus();
         Invalidate();
+    }
+
+    private void UpdateAccessibleStatus()
+    {
+        string selectedAction = _selectedCard == 0
+            ? "Créer une présentation"
+            : "Ouvrir un projet";
+        string description =
+            $"Action sélectionnée : {selectedAction}. Utilisez les flèches gauche et droite pour choisir, puis Entrée ou Espace pour continuer.";
+        if (AccessibleDescription == description)
+        {
+            return;
+        }
+
+        AccessibleDescription = description;
+        if (IsHandleCreated)
+        {
+            AccessibilityNotifyClients(AccessibleEvents.DescriptionChange, -1);
+        }
     }
 
     private int GetCardAt(Point point) => _selectorBounds.Contains(point) ? _selectedCard
@@ -850,6 +894,7 @@ internal sealed class LoadingScreen : Control
     private readonly System.Windows.Forms.Timer _timer = new() { Interval = 30 };
     private float _progress;
     private float _rotation;
+    private int _lastAnnouncedProgress;
 
     public event EventHandler? Completed;
 
@@ -857,6 +902,10 @@ internal sealed class LoadingScreen : Control
     {
         Dock = DockStyle.Fill;
         BackColor = WindowColor;
+        TabStop = true;
+        AccessibleRole = AccessibleRole.ProgressBar;
+        AccessibleName = "Préparation de votre espace";
+        AccessibleDescription = "En attente.";
         SetStyle(
             ControlStyles.UserPaint
                 | ControlStyles.AllPaintingInWmPaint
@@ -867,6 +916,7 @@ internal sealed class LoadingScreen : Control
         {
             _progress = Math.Min(1, _progress + 0.025f);
             _rotation = (_rotation + 9f) % 360;
+            AnnounceProgress();
             Invalidate();
             if (_progress >= 1)
             {
@@ -880,6 +930,8 @@ internal sealed class LoadingScreen : Control
     {
         _progress = 0;
         _rotation = 0;
+        _lastAnnouncedProgress = 0;
+        UpdateAccessibleDescription("Chargement en cours : 0 %. Veuillez patienter.");
         _timer.Start();
         Invalidate();
     }
@@ -926,6 +978,36 @@ internal sealed class LoadingScreen : Control
             _timer.Dispose();
         }
         base.Dispose(disposing);
+    }
+
+    private void AnnounceProgress()
+    {
+        int percentage = (int)(_progress * 100);
+        if (percentage >= 100)
+        {
+            UpdateAccessibleDescription("Chargement terminé.");
+            return;
+        }
+
+        if (percentage >= _lastAnnouncedProgress + 25)
+        {
+            _lastAnnouncedProgress = percentage;
+            UpdateAccessibleDescription($"Chargement en cours : {percentage} %.");
+        }
+    }
+
+    private void UpdateAccessibleDescription(string description)
+    {
+        if (AccessibleDescription == description)
+        {
+            return;
+        }
+
+        AccessibleDescription = description;
+        if (IsHandleCreated)
+        {
+            AccessibilityNotifyClients(AccessibleEvents.DescriptionChange, -1);
+        }
     }
 
     private void DrawLoadingObject(Graphics graphics, float centerX, float centerY)

@@ -11,6 +11,8 @@ internal sealed class SlideCanvas : Control
     private const float RotationHandleOffset = 28;
     private const float MinimumZoom = 0.25f;
     private const float MaximumZoom = 3;
+    private const string KeyboardAccessibilityHelp =
+        "Ctrl+A sélectionne tous les éléments. Utilisez les flèches pour déplacer la sélection, Maj avec les flèches pour la déplacer par incréments plus grands, Suppr pour supprimer et Échap pour désélectionner.";
     private readonly SlideRenderer _renderer;
     private Slide? _slide;
     private SlideElement? _selectedElement;
@@ -47,7 +49,7 @@ internal sealed class SlideCanvas : Control
         TabStop = true;
         AccessibleRole = AccessibleRole.Graphic;
         AccessibleName = "Canevas de la diapositive";
-        AccessibleDescription = "Ctrl+A sélectionne tous les éléments. Utilisez les flèches pour déplacer la sélection, Maj avec les flèches pour la déplacer par incréments plus grands, Suppr pour supprimer et Échap pour désélectionner.";
+        AccessibleDescription = KeyboardAccessibilityHelp;
         SetStyle(
             ControlStyles.UserPaint
                 | ControlStyles.AllPaintingInWmPaint
@@ -81,6 +83,19 @@ internal sealed class SlideCanvas : Control
         }
         _selectedElement = _selectedElements.LastOrDefault();
         Invalidate();
+    }
+
+    public void SetAccessibleStatus(string status)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(status);
+        string description = $"{status} {KeyboardAccessibilityHelp}";
+        if (AccessibleDescription == description)
+        {
+            return;
+        }
+
+        AccessibleDescription = description;
+        AccessibilityNotifyClients(AccessibleEvents.DescriptionChange, -1);
     }
 
     public void ZoomBy(float factor, Point? anchor = null)
