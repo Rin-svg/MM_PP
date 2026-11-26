@@ -1,0 +1,31 @@
+
+# Plan d'exportation - SlideStudio
+
+## 1. Objectif
+Permettre aux utilisateurs d'exporter leurs présentations dans différents formats.
+
+## 2. Exportation PNG
+- Exporter une diapositive individuelle.
+- Exporter toutes les diapositives.
+- Choisir le dossier de destination.
+- Conserver les dimensions et proportions.
+- Vérifier la qualité des images générées.
+
+## 3. Exportation PDF
+- Générer un document PDF unique.
+- Respecter l'ordre des diapositives.
+- Conserver les proportions.
+- Choisir le dossier de destination.
+
+## 4. Gestion des erreurs
+- Vérifier les droits d'accès au dossier.
+- Gérer les fichiers déjà existants.
+- Afficher un message en cas d'échec.
+- Confirmer la réussite de l'exportation.
+
+## 5. Tests
+- Tester l'exportation d'une seule diapositive.
+- Tester l'exportation de plusieurs diapositives.
+- Vérifier les fichiers générés.
+- Tester les dossiers non accessibles.
+- Tester les erreurs d'écriture.

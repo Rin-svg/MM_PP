@@ -1,0 +1,16 @@
+# Plan du diaporama
+
+## Lancement
+- Touche F5 pour démarrer le diaporama.
+- Affichage en plein écran.
+- Affichage d'une diapositive à la fois.
+
+## Navigation
+- Flèche droite : diapositive suivante.
+- Flèche gauche : diapositive précédente.
+- Échap : quitter le diaporama.
+
+## Comportement
+- Ne pas dépasser la dernière diapositive.
+- Ne pas revenir avant la première.
+- Respecter l'ordre des diapositives.
