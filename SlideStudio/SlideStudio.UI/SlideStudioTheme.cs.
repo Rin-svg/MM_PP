@@ -1,0 +1,28 @@
+using System.Drawing;
+
+namespace SlideStudio.UI;
+
+/// <summary>
+/// Définit les couleurs et les styles visuels de SlideStudio.
+/// </summary>
+public static class SlideStudioTheme
+{
+    public static readonly Color Primary = Color.FromArgb(52, 120, 246);
+    public static readonly Color Background = Color.FromArgb(245, 247, 250);
+    public static readonly Color Surface = Color.White;
+    public static readonly Color Text = Color.FromArgb(35, 40, 48);
+    public static readonly Color SecondaryText = Color.FromArgb(100, 110, 125);
+    public static readonly Color Border = Color.FromArgb(220, 225, 232);
+    public static readonly Color Success = Color.FromArgb(40, 150, 95);
+    public static readonly Color Danger = Color.FromArgb(210, 65, 65);
+
+    public static Font CreateTitleFont(float size = 18)
+    {
+        return new Font("Segoe UI", size, FontStyle.Bold);
+    }
+
+    public static Font CreateBodyFont(float size = 10)
+    {
+        return new Font("Segoe UI", size, FontStyle.Regular);
+    }
+}
