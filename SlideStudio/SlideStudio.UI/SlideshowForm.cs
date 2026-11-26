@@ -2,6 +2,7 @@
 using System;
 using System.Collections.Generic;
 using System.Drawing;
+using System.Linq;
 using System.Windows.Forms;
 using SlideStudio.Core;
 using SlideStudio.Core.Model;
@@ -32,7 +33,6 @@ public class SlideshowForm : Form
 
     /// <summary>
     /// Crée un diaporama à partir d'une collection d'images.
-    /// Les images sont copiées et libérées avec la fenêtre.
     /// </summary>
     public SlideshowForm(IEnumerable<Image> slides)
     {
@@ -40,17 +40,29 @@ public class SlideshowForm : Form
 
         _slides = [];
 
-        foreach (Image slide in slides)
+        try
         {
-            ArgumentNullException.ThrowIfNull(slide);
-            _slides.Add(new Bitmap(slide));
-        }
+            foreach (Image slide in slides)
+            {
+                ArgumentNullException.ThrowIfNull(slide);
+                _slides.Add(new Bitmap(slide));
+            }
 
-        if (_slides.Count == 0)
+            if (_slides.Count == 0)
+            {
+                throw new ArgumentException(
+                    "Le diaporama doit contenir au moins une image.",
+                    nameof(slides));
+            }
+        }
+        catch
         {
-            throw new ArgumentException(
-                "Le diaporama doit contenir au moins une image.",
-                nameof(slides));
+            foreach (Image slide in _slides)
+            {
+                slide.Dispose();
+            }
+
+            throw;
         }
 
         _pictureBox = CreatePictureBox();
@@ -67,8 +79,7 @@ public class SlideshowForm : Form
     }
 
     /// <summary>
-    /// Crée un diaporama directement depuis une présentation
-    /// et ses médias embarqués.
+    /// Crée un diaporama depuis une présentation et ses médias.
     /// </summary>
     public SlideshowForm(
         IReadOnlyList<Slide> slides,
@@ -136,10 +147,7 @@ public class SlideshowForm : Form
             AutoSize = true,
             ForeColor = Color.White,
             BackColor = Color.FromArgb(45, 45, 45),
-            Font = new Font(
-                "Segoe UI",
-                12,
-                FontStyle.Bold),
+            Font = new Font("Segoe UI", 12, FontStyle.Bold),
             Padding = new Padding(12, 8, 12, 8),
             Anchor = AnchorStyles.Bottom | AnchorStyles.Right
         };
@@ -151,17 +159,12 @@ public class SlideshowForm : Form
     private void InitializeWindow()
     {
         Text = "SlideStudio - Diaporama";
-
         WindowState = FormWindowState.Maximized;
-
         FormBorderStyle = FormBorderStyle.None;
-
         BackColor = Color.Black;
-
         KeyPreview = true;
 
         KeyDown += SlideshowForm_KeyDown;
-
         Resize += SlideshowForm_Resize;
     }
 
@@ -175,7 +178,6 @@ public class SlideshowForm : Form
             _pictureBox.Image = null;
 
             _renderedSlide?.Dispose();
-
             _renderer?.Dispose();
 
             foreach (Image slide in _slides)
@@ -194,8 +196,7 @@ public class SlideshowForm : Form
     /// </summary>
     private void ShowSlide()
     {
-        if (_presentationSlides is not null &&
-            _renderer is not null)
+        if (_presentationSlides is not null && _renderer is not null)
         {
             Bitmap renderedSlide = _renderer.Render(
                 _presentationSlides[_currentIndex],
@@ -206,7 +207,6 @@ public class SlideshowForm : Form
             Bitmap? previousSlide = _renderedSlide;
 
             _renderedSlide = renderedSlide;
-
             _pictureBox.Image = renderedSlide;
 
             previousSlide?.Dispose();
@@ -216,30 +216,22 @@ public class SlideshowForm : Form
             _pictureBox.Image = _slides[_currentIndex];
         }
 
-        // Réinitialiser l'écran noir.
         _blackScreen = false;
-
         _pictureBox.Visible = true;
+        _slideCounterLabel.Visible = true;
 
-        // Calculer le nombre total de diapositives.
         int totalSlides =
             _presentationSlides?.Length ?? _slides.Count;
 
-        // Actualiser le compteur.
         _slideCounterLabel.Text =
             $"Diapositive {_currentIndex + 1} / {totalSlides}";
 
-        // Afficher le compteur.
-        _slideCounterLabel.Visible = true;
-
-        // Repositionner le compteur.
         PositionSlideCounter();
-
         _slideCounterLabel.BringToFront();
     }
 
     /// <summary>
-    /// Positionne le compteur en bas à droite de la fenêtre.
+    /// Positionne le compteur en bas à droite.
     /// </summary>
     private void PositionSlideCounter()
     {
@@ -255,11 +247,33 @@ public class SlideshowForm : Form
     }
 
     /// <summary>
-    /// Met à jour la position du compteur lors du redimensionnement.
+    /// Actualise la position du compteur au redimensionnement.
     /// </summary>
     private void SlideshowForm_Resize(object? sender, EventArgs e)
     {
         PositionSlideCounter();
+    }
+
+    /// <summary>
+    /// Affiche les raccourcis clavier disponibles.
+    /// </summary>
+    private void ShowKeyboardHelp()
+    {
+        string helpMessage =
+            "RACCOURCIS DU DIAPORAMA\n\n" +
+            "Flèche droite : diapositive suivante\n" +
+            "Espace : diapositive suivante\n" +
+            "Flèche gauche : diapositive précédente\n" +
+            "B : activer ou désactiver l'écran noir\n" +
+            "Échap : quitter la présentation\n" +
+            "F1 : afficher cette aide";
+
+        MessageBox.Show(
+            this,
+            helpMessage,
+            "Aide - SlideStudio",
+            MessageBoxButtons.OK,
+            MessageBoxIcon.Information);
     }
 
     /// <summary>
@@ -275,73 +289,46 @@ public class SlideshowForm : Form
         switch (command)
         {
             case SlideshowCommand.Exit:
-            {
-                // Quitter la présentation.
                 Close();
                 break;
-            }
 
             case SlideshowCommand.ToggleBlackScreen:
-            {
-                // Activer ou désactiver l'écran noir.
                 _blackScreen = !_blackScreen;
-
                 _pictureBox.Visible = !_blackScreen;
                 _slideCounterLabel.Visible = !_blackScreen;
-
                 break;
-            }
 
             case SlideshowCommand.Next:
-            {
-                // Ne pas naviguer pendant l'écran noir.
-                if (_blackScreen)
+                if (!_blackScreen)
                 {
-                    break;
+                    int totalSlides =
+                        _presentationSlides?.Length ?? _slides.Count;
+
+                    if (_currentIndex < totalSlides - 1)
+                    {
+                        _currentIndex++;
+                        ShowSlide();
+                    }
                 }
-
-                int slideCount =
-                    _presentationSlides?.Length ?? _slides.Count;
-
-                // Vérifier qu'une diapositive suivante existe.
-                if (_currentIndex < slideCount - 1)
-                {
-                    _currentIndex++;
-
-                    ShowSlide();
-                }
-
                 break;
-            }
 
             case SlideshowCommand.Previous:
-            {
-                // Ne pas naviguer pendant l'écran noir.
-                if (_blackScreen)
-                {
-                    break;
-                }
-
-                // Vérifier qu'une diapositive précédente existe.
-                if (_currentIndex > 0)
+                if (!_blackScreen && _currentIndex > 0)
                 {
                     _currentIndex--;
-
                     ShowSlide();
                 }
-
                 break;
-            }
+
+            case SlideshowCommand.ShowHelp:
+                ShowKeyboardHelp();
+                break;
 
             case SlideshowCommand.None:
             default:
-            {
-                // Aucune action pour les touches inconnues.
                 break;
-            }
         }
 
-        // Éviter le traitement supplémentaire des touches reconnues.
         if (command != SlideshowCommand.None)
         {
             e.Handled = true;
