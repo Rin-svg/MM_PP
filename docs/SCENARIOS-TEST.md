@@ -28,3 +28,11 @@
 ## 6. Exportation
 - Vérifier l'exportation en PNG.
 - Vérifier l'exportation en PDF.
+  
+- ## 7. Critères de validation
+- Aucun plantage pendant l'utilisation.
+- Les erreurs sont signalées clairement.
+- Les raccourcis clavier fonctionnent.
+- Les fichiers enregistrés peuvent être rouverts.
+- Les fonctionnalités sont testées avant la fusion.
+  
